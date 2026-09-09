@@ -1,0 +1,14 @@
+.env
+.env.*
+*.json.key
+service-account*.json
+credentials*.json
+__pycache__/
+.venv/
+venv/
+.cache/
+data/cache/
+*.parquet
+.DS_Store
+.ruff_cache/
+.pytest_cache/
