@@ -1,0 +1,78 @@
+# Non-secret pipeline configuration. Secrets live in environment variables only
+# (CFBD_API_KEY, SHEET_ID, GOOGLE_APPLICATION_CREDENTIALS or GOOGLE_SERVICE_ACCOUNT_B64).
+
+season: 2026
+# week: null  -> auto-detect from the CFBD calendar using `timezone`; set an int to pin.
+week: null
+season_type: regular
+timezone: America/Chicago
+
+# First/last dates the scheduled job should actually run (outside = no-op success).
+season_window:
+  start: 2026-08-24
+  end: 2027-01-20
+
+cache:
+  dir: data/cache
+  ttl_hours:
+    lines: 1          # lines move; short TTL
+    games: 6
+    calendar: 168
+    teams: 168
+    ppa: 6
+    parquet: 6
+
+sources:
+  cfbd:
+    enabled: true
+    base_url: https://api.collegefootballdata.com
+    line_provider_preference: [DraftKings, Bovada, ESPN Bet, consensus]
+  espn:
+    enabled: true          # schedule + DraftKings odds fallback, no auth
+  sportsdataverse:
+    enabled: true
+    release_base: https://github.com/sportsdataverse/sportsdataverse-data/releases/download
+    seasons_for_model: [2025, 2026]   # RROE training seasons
+  draftkings:
+    enabled: true
+  pff_csv:
+    enabled: true
+    dir: data/manual/pff
+
+slates:
+  # Used when DraftKings detection fails and the sheet Config tab is empty.
+  kickoff_windows_ct:
+    - {name: Main, weekday: Sat, start: "11:00", end: "14:29"}
+    - {name: Afternoon, weekday: Sat, start: "14:30", end: "17:59"}
+    - {name: Night, weekday: Sat, start: "18:00", end: "20:59"}
+    - {name: Late Night, weekday: Sat, start: "21:00", end: "23:59"}
+
+metrics:
+  garbage_time:               # |margin| at play start above these => garbage time
+    q1: null                  # never
+    q2: 28
+    q3: 21
+    q4: 14
+  two_minute_filter: true     # drop plays with <= 2:00 left in Q2 and Q4 for neutral pace
+  include_scrambles_in_dropback: true
+  recent_games_window: 3
+  rank_population: fbs        # rank denominator = teams with classification == fbs
+
+sheet:
+  tabs:
+    main: "DK "
+    pff: "PFF Ratings"
+    vegas_raw: "Vegas Raw"
+    pace_raw: "Pace Raw"
+    epa_raw: "EPA Raw"
+    rroe_raw: "RROE Raw"
+    teams: "Teams"
+    targets_raw: "Targets Raw"
+    passing_raw: "Passing Raw"
+    rushing_raw: "Rushing Raw"
+    targets: "Targets"
+    passing: "Passing"
+    rushing: "Rushing"
+    config: "Config"
+    log: "Log"
+  protected_editor_emails: [tmallinson@proton.me]

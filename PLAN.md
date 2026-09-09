@@ -146,17 +146,17 @@ Write mechanics: `values.batchUpdate` with `RAW`/`USER_ENTERED` per block, one
 frozen rows), ≤ 10 write requests per full run, exponential backoff on 429/5xx,
 `--dry-run` prints a per-tab diff of changed cells.
 
-## 6. Automation proposal
+## 6. Automation (approved 2026-09-09)
 
 | Job | Cron (UTC) | Local (CT) | Runs/week | Est. minutes each | Weekly |
 |-----|-----------|------------|-----------|-------------------|--------|
-| Full rebuild | `0 11 * * *` | 06:00 daily | 7 | ~4 (uv cache + 65 MB parquet, cached 2025) | 28 |
-| Lines-only (`--only vegas,slates`) | `0 13,15,17,19,21,23,1,3 * * 2-6` | 08:00–22:00 every 2h Tue–Sat | 40 | ~1.5 | 60 |
+| Full rebuild | `0 11 * * *` | 06:00 daily | 7 | ~4 (uv cache + ~65 MB parquet) | 28 |
+| Lines-only (`--only slates,vegas`) | `0 13,1 * * 2-6` | 08:00 and 20:00 Tue–Sat | 10 | ~1.5 | 15 |
 
-≈ 90 min/week ≈ **390 min/month**, about 20% of the 2,000-minute Free plan
+≈ 43 min/week ≈ **190 min/month**, under 10% of the 2,000-minute Free plan
 (Sep–Jan only; the workflow is a no-op outside the configured season window).
-Lines-only path skips parquet downloads entirely (ESPN scoreboard + DK lobby
-only). Failures raise a step summary in the run log and the job goes red.
+Lines-only path skips parquet downloads entirely (CFBD lines + DK lobby only).
+Failures raise a step summary in the run log and the job goes red.
 
 ## 7. Phase checkpoints (unchanged from your brief)
 
@@ -166,12 +166,14 @@ Commit at each checkpoint, no push until you've reviewed.
 
 ## 8. Decisions I made (low-risk, flag if you disagree)
 
-1. ESPN scoreboard is the primary Vegas + schedule source; CFBD is fallback until
-   your key works, then a cross-check column.
+1. CFBD `/lines` (key confirmed working 2026-09-09; DraftKings + Bovada + openers)
+   is the primary Vegas source with ESPN scoreboard (DraftKings) as fallback;
+   CFBD `/games` + `/calendar` are primary for schedule and week, ESPN fallback.
 2. ESPN week numbering is canonical (no week 0).
 3. Main tab cells become values, not VLOOKUP formulas.
-4. New raw/display tabs are created next to the 2025 ones instead of overwriting
-   them.
+4. Per your 2026-09-09 note, the 2024/2025-labelled tabs and the weekly
+   "Week N Targets" tabs in the dev sheet are deleted in Phase 3 (they were
+   reference only); `DK `, `PFF Ratings`, and `Combined Ranks - Main` are kept.
 5. Garbage-time thresholds 28/21/14 by quarter (configurable).
 6. RROE rank 1 = most rush-heavy over expectation.
 7. Scrambles counted as dropbacks via the "rusher is a passer in this game" rule.

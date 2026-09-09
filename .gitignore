@@ -11,4 +11,5 @@ data/cache/
 *.parquet
 .DS_Store
 .ruff_cache/
-.pytest_cache/
+.pytest_cache/.mypy_cache/
+data/manual/**/*.csv

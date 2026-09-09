@@ -1,0 +1,236 @@
+[
+ {
+  "id": 401856678,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-12T00:00:00.000Z",
+  "homeTeamId": 2305,
+  "homeTeam": "Kansas",
+  "homeConference": "Big 12",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 142,
+  "awayTeam": "Missouri",
+  "awayConference": "SEC",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": 5.5,
+    "formattedSpread": "Missouri -5.5",
+    "spreadOpen": 7,
+    "overUnder": 50.5,
+    "overUnderOpen": 52.5,
+    "homeMoneyline": 180,
+    "awayMoneyline": -218
+   },
+   {
+    "provider": "Bovada",
+    "spread": 5.5,
+    "formattedSpread": "Missouri -5.5",
+    "spreadOpen": 6.5,
+    "overUnder": 50,
+    "overUnderOpen": 50,
+    "homeMoneyline": 175,
+    "awayMoneyline": -210
+   }
+  ]
+ },
+ {
+  "id": 401856782,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-12T16:00:00.000Z",
+  "homeTeamId": 197,
+  "homeTeam": "Oklahoma State",
+  "homeConference": "Big 12",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 2483,
+  "awayTeam": "Oregon",
+  "awayConference": "Big Ten",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": 22.5,
+    "formattedSpread": "Oregon -22.5",
+    "spreadOpen": 18.5,
+    "overUnder": 57.5,
+    "overUnderOpen": 60.5,
+    "homeMoneyline": 1000,
+    "awayMoneyline": -1800
+   },
+   {
+    "provider": "Bovada",
+    "spread": 23,
+    "formattedSpread": "Oregon -23.0",
+    "spreadOpen": 22.5,
+    "overUnder": 57.5,
+    "overUnderOpen": 57.5,
+    "homeMoneyline": 1000,
+    "awayMoneyline": -2200
+   }
+  ]
+ },
+ {
+  "id": 401856788,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-12T23:30:00.000Z",
+  "homeTeamId": 2294,
+  "homeTeam": "Iowa",
+  "homeConference": "Big Ten",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 66,
+  "awayTeam": "Iowa State",
+  "awayConference": "Big 12",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": -14,
+    "formattedSpread": "Iowa -14",
+    "spreadOpen": -11.5,
+    "overUnder": 40.5,
+    "overUnderOpen": 41.5,
+    "homeMoneyline": -650,
+    "awayMoneyline": 470
+   },
+   {
+    "provider": "Bovada",
+    "spread": -14,
+    "formattedSpread": "Iowa -14.0",
+    "spreadOpen": -14,
+    "overUnder": 40.5,
+    "overUnderOpen": 41,
+    "homeMoneyline": -650,
+    "awayMoneyline": 450
+   }
+  ]
+ },
+ {
+  "id": 401856670,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-13T02:15:00.000Z",
+  "homeTeamId": 254,
+  "homeTeam": "Utah",
+  "homeConference": "Big 12",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 8,
+  "awayTeam": "Arkansas",
+  "awayConference": "SEC",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": -12.5,
+    "formattedSpread": "Utah -12.5",
+    "spreadOpen": -9.5,
+    "overUnder": 54.5,
+    "overUnderOpen": 54.5,
+    "homeMoneyline": -520,
+    "awayMoneyline": 390
+   },
+   {
+    "provider": "Bovada",
+    "spread": -12.5,
+    "formattedSpread": "Utah -12.5",
+    "spreadOpen": -13,
+    "overUnder": 55,
+    "overUnderOpen": 57,
+    "homeMoneyline": -525,
+    "awayMoneyline": 375
+   }
+  ]
+ },
+ {
+  "id": 401856683,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-12T16:00:00.000Z",
+  "homeTeamId": 245,
+  "homeTeam": "Texas A&M",
+  "homeConference": "SEC",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 9,
+  "awayTeam": "Arizona State",
+  "awayConference": "Big 12",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": -14.5,
+    "formattedSpread": "Texas A&M -14.5",
+    "spreadOpen": -14.5,
+    "overUnder": 50.5,
+    "overUnderOpen": 51.5,
+    "homeMoneyline": -700,
+    "awayMoneyline": 500
+   },
+   {
+    "provider": "Bovada",
+    "spread": -14,
+    "formattedSpread": "Texas A&M -14.0",
+    "spreadOpen": -14,
+    "overUnder": 50,
+    "overUnderOpen": 51.5,
+    "homeMoneyline": -650,
+    "awayMoneyline": 450
+   }
+  ]
+ },
+ {
+  "id": 401856679,
+  "season": 2026,
+  "seasonType": "regular",
+  "week": 2,
+  "startDate": "2026-09-12T16:00:00.000Z",
+  "homeTeamId": 130,
+  "homeTeam": "Michigan",
+  "homeConference": "Big Ten",
+  "homeClassification": "fbs",
+  "homeScore": null,
+  "awayTeamId": 201,
+  "awayTeam": "Oklahoma",
+  "awayConference": "SEC",
+  "awayClassification": "fbs",
+  "awayScore": null,
+  "lines": [
+   {
+    "provider": "DraftKings",
+    "spread": 5.5,
+    "formattedSpread": "Oklahoma -5.5",
+    "spreadOpen": -1.5,
+    "overUnder": 43.5,
+    "overUnderOpen": 46.5,
+    "homeMoneyline": 180,
+    "awayMoneyline": -218
+   },
+   {
+    "provider": "Bovada",
+    "spread": 5.5,
+    "formattedSpread": "Oklahoma -5.5",
+    "spreadOpen": -1.5,
+    "overUnder": 43.5,
+    "overUnderOpen": 45.5,
+    "homeMoneyline": 175,
+    "awayMoneyline": -210
+   }
+  ]
+ }
+]
