@@ -140,9 +140,26 @@ def rushing_frame(rows: list[dict[str, Any]], teams: TeamIndex) -> pl.DataFrame:
 # -- per-player-game aggregates ---------------------------------------------------------------
 
 
-def target_games(passing: pl.DataFrame) -> pl.DataFrame:
+def target_games(passing: pl.DataFrame, rushing: pl.DataFrame | None = None) -> pl.DataFrame:
+    """Per receiver-game. `team_db` = team dropbacks (attempts + sacks) in that game, the
+    denominator for the targets-per-team-dropback proxy (routes are not available free)."""
     df = passing.filter(pl.col("target_id").is_not_null())
     team_att = passing.group_by(["game_id", "team_id"]).agg(pl.len().alias("team_attempts"))
+    if rushing is not None and rushing.height:
+        sacks = (
+            rushing.filter(pl.col("is_sack"))
+            .group_by(["game_id", "team_id"])
+            .agg(pl.len().alias("team_sacks"))
+        )
+        team_att = (
+            team_att.join(sacks, on=["game_id", "team_id"], how="left")
+            .with_columns(
+                (pl.col("team_attempts") + pl.col("team_sacks").fill_null(0)).alias("team_db")
+            )
+            .drop("team_sacks")
+        )
+    else:
+        team_att = team_att.with_columns(pl.col("team_attempts").alias("team_db"))
     return (
         df.group_by(["game_id", "week", "team_id", pl.col("target_id").alias("player_id")])
         .agg(

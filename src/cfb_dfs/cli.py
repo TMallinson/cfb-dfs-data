@@ -172,8 +172,11 @@ def run(
     refresh: Annotated[bool, typer.Option("--refresh", help="bypass the disk cache")] = False,
     sheet_id: Annotated[str | None, typer.Option("--sheet-id")] = None,
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
+    force: Annotated[
+        bool, typer.Option("--force", help="run even outside the season window")
+    ] = False,
 ) -> None:
-    """Run the pipeline (stages land in later phases)."""
+    """Run the pipeline: fetch sources, compute metrics, write the sheet."""
     settings, secrets = _bootstrap(config, verbose)
     if week is not None:
         settings.week = week
@@ -181,6 +184,11 @@ def run(
         secrets.sheet_id = sheet_id
     from cfb_dfs.pipeline import run_pipeline
 
+    win = settings.season_window
+    today = settings.now().date()
+    if win is not None and not (win.start <= today <= win.end) and not force:
+        typer.echo(f"outside season window {win.start}..{win.end}; nothing to do (use --force)")
+        raise typer.Exit(code=0)
     stages = [s.strip() for s in only.split(",")] if only else None
     code = run_pipeline(settings, secrets, stages=stages, dry_run=dry_run, refresh=refresh)
     raise typer.Exit(code=code)

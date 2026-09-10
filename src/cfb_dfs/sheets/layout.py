@@ -195,6 +195,8 @@ TARGETS_RAW_HEADER = [
     "YAC",
     "RZ targets",
     "PPA/tgt",
+    "Team DB (player games)",
+    "Tgt/team DB",
     *WEEKS,
 ]
 PASSING_RAW_HEADER = [

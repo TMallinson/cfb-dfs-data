@@ -250,7 +250,13 @@ class SheetWriter:
         )
 
     def format_main(self, spec: TabSpec) -> None:
-        """Replace the main tab's conditional formats, number formats, column widths."""
+        """Main tab: conditional formats, number formats, column widths."""
+        self.format_tab(spec, rules=None, widths=True)
+
+    def format_tab(
+        self, spec: TabSpec, rules: list[Any] | None, widths: bool = False, week_block: bool = False
+    ) -> None:
+        """Replace a tab's conditional formats (idempotent) and apply number formats."""
         from cfb_dfs.sheets.format import (
             column_width_requests,
             conditional_format_requests,
@@ -265,11 +271,59 @@ class SheetWriter:
             return
         sid = sheet["properties"]["sheetId"]
         existing = len(sheet.get("conditionalFormats", []))
-        reqs = conditional_format_requests(sid, spec.header, spec.header_row, existing)
-        reqs += number_format_requests(sid, spec.header, spec.header_row)
-        reqs += column_width_requests(sid, spec.header)
+        reqs = conditional_format_requests(
+            sid, spec.header, spec.header_row, existing, rules=rules, week_block=week_block
+        )
+        reqs += number_format_requests(sid, spec.header, spec.header_row, rules=rules)
+        if widths:
+            reqs += column_width_requests(sid, spec.header)
         self.client.batch_update(reqs)
         log.info("sheets.formatted", tab=spec.name, rules_replaced=existing)
+
+    def protect_tabs(self, specs: list[TabSpec], editors: list[str]) -> list[str]:
+        """Protect whole raw tabs (idempotent: one pipeline-owned range per tab, with the
+        given editors plus the service account). Returns tab names protected this call."""
+        meta = self.metadata(refresh=True)
+        desc = "cfb-dfs pipeline: raw data, edit via the pipeline"
+        me = getattr(self.client.credentials, "service_account_email", None)
+        editors = sorted({*editors, *([me] if me else [])})
+        reqs: list[dict[str, Any]] = []
+        done: list[str] = []
+        for sheet in meta.get("sheets", []):
+            title = sheet["properties"]["title"]
+            spec = next((s for s in specs if s.name == title and s.protected), None)
+            if spec is None:
+                continue
+            mine = [pr for pr in sheet.get("protectedRanges", []) if pr.get("description") == desc]
+            if mine:
+                continue
+            reqs.append(
+                {
+                    "addProtectedRange": {
+                        "protectedRange": {
+                            "range": {"sheetId": sheet["properties"]["sheetId"]},
+                            "description": desc,
+                            "warningOnly": False,
+                            "editors": {"users": editors},
+                        }
+                    }
+                }
+            )
+            done.append(title)
+        if reqs:
+            self.client.batch_update(reqs)
+            self.metadata(refresh=True)
+            log.info("sheets.protected", tabs=done)
+        return done
+
+    def mark_stale(self, spec: TabSpec, message: str) -> None:
+        """Write a STALE banner into A1 of a tab whose stage failed this run, keeping
+        the previously written rows in place."""
+        if spec.name not in self.sheet_ids():
+            return
+        self.client.batch_update_values(
+            [{"range": a1(spec.name, "A1"), "values": [[message]]}], value_input="RAW"
+        )
 
     def delete_tabs(self, titles: list[str], dry_run: bool = False) -> list[str]:
         """Delete tabs. Tabs with owner-only protections cannot be deleted by the

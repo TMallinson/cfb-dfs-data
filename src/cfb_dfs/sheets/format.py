@@ -58,6 +58,74 @@ MAIN_RULES: list[ColorRule] = [
 RANK_HEADER = "Rk"
 FLIPPED_RANK_AFTER = {"RROE%"}  # a "Rk" right after these headers: high number = green
 
+# Player display tabs: volume/efficiency columns, higher = greener; weekly block as one scale.
+TARGET_RULES: list[ColorRule] = [
+    ColorRule(
+        h,
+        "high_good",
+        "0.0" if h in ("Tgt/game", "Tgt/game L3", "Tgt share %", "aDOT", "Tgt/team DB") else "0",
+    )
+    for h in (
+        "Targets",
+        "Tgt/game",
+        "Tgt L3",
+        "Tgt/game L3",
+        "Tgt share %",
+        "Receptions",
+        "Rec yards",
+        "Rec TD",
+        "aDOT",
+        "Air yards",
+        "YAC",
+        "RZ targets",
+        "Tgt/team DB",
+    )
+] + [ColorRule("PPA/tgt", "high_good", "0.00")]
+PASSING_RULES: list[ColorRule] = [
+    ColorRule(
+        h, "high_good", "0.0" if h in ("Att/game", "Att/game L3", "Comp %", "YPA", "aDOT") else "0"
+    )
+    for h in (
+        "Dropbacks",
+        "Attempts",
+        "Att/game",
+        "Att L3",
+        "Att/game L3",
+        "Completions",
+        "Comp %",
+        "Pass yards",
+        "YPA",
+        "aDOT",
+        "Pass TD",
+        "Designed runs",
+        "Rush yards",
+    )
+] + [
+    ColorRule("INT", "low_good", "0"),
+    ColorRule("Sacks", "low_good", "0"),
+    ColorRule("PPA/att", "high_good", "0.00"),
+]
+RUSHING_RULES: list[ColorRule] = [
+    ColorRule(
+        h, "high_good", "0.0" if h in ("Car/game", "Car/game L3", "YPC", "Success %") else "0"
+    )
+    for h in (
+        "Carries",
+        "Car/game",
+        "Car L3",
+        "Car/game L3",
+        "Rush yards",
+        "YPC",
+        "Rush TD",
+        "Success %",
+        "Targets",
+        "Receptions",
+        "Rec yards",
+        "Touches",
+    )
+] + [ColorRule("PPA/carry", "high_good", "0.00")]
+WEEK_BLOCK = ("Wk1", "Wk16")  # one gradient across all weekly columns
+
 
 def _grid(sheet_id: int, col: int, first_row: int, last_row: int) -> dict[str, Any]:
     return {
@@ -110,8 +178,11 @@ def conditional_format_requests(
     header_row: int,
     existing_rule_count: int,
     last_row: int = 1000,
+    rules: list[ColorRule] | None = None,
+    week_block: bool = False,
 ) -> list[dict[str, Any]]:
     """Delete every existing rule on the sheet, then add gradient rules per column."""
+    rules = MAIN_RULES if rules is None else rules
     reqs: list[dict[str, Any]] = [
         {"deleteConditionalFormatRule": {"sheetId": sheet_id, "index": 0}}
         for _ in range(existing_rule_count)
@@ -119,35 +190,42 @@ def conditional_format_requests(
     first_row = header_row + 1
     by_header = {h: i for i, h in enumerate(header)}
 
-    def add(col: int, kind: str) -> None:
+    def add(col: int, kind: str, end_col: int | None = None) -> None:
+        rng = _grid(sheet_id, col, first_row, last_row)
+        if end_col is not None:
+            rng["endColumnIndex"] = end_col + 1
         reqs.append(
             {
                 "addConditionalFormatRule": {
-                    "rule": {
-                        "ranges": [_grid(sheet_id, col, first_row, last_row)],
-                        "gradientRule": gradient(kind),
-                    },
+                    "rule": {"ranges": [rng], "gradientRule": gradient(kind)},
                     "index": 0,
                 }
             }
         )
 
-    for rule in MAIN_RULES:
+    for rule in rules:
         col = by_header.get(rule.header)
         if col is not None:
             add(col, rule.kind)
     for col, h in enumerate(header):
         if h == RANK_HEADER:
             add(col, _rank_kind(header, col))
+    if week_block and WEEK_BLOCK[0] in by_header and WEEK_BLOCK[1] in by_header:
+        add(by_header[WEEK_BLOCK[0]], "high_good", by_header[WEEK_BLOCK[1]])
     return reqs
 
 
 def number_format_requests(
-    sheet_id: int, header: list[str], header_row: int, last_row: int = 1000
+    sheet_id: int,
+    header: list[str],
+    header_row: int,
+    last_row: int = 1000,
+    rules: list[ColorRule] | None = None,
 ) -> list[dict[str, Any]]:
+    rules = MAIN_RULES if rules is None else rules
     reqs: list[dict[str, Any]] = []
     by_header = {h: i for i, h in enumerate(header)}
-    fmts = {r.header: r.number_format for r in MAIN_RULES if r.number_format}
+    fmts = {r.header: r.number_format for r in rules if r.number_format}
     for h, fmt in fmts.items():
         col = by_header.get(h)
         if col is None:

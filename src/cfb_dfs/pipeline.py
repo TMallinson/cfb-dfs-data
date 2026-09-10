@@ -484,6 +484,7 @@ def stage_players(ctx: Context) -> None:
             "yac",
             "ppa",
             "rz_targets",
+            "team_db",
         ],
         order,
         team_games,
@@ -912,6 +913,8 @@ def build_targets_table(ctx: Context, spec: TabSpec) -> TableWrite:
                 r["yac"],
                 r["rz_targets"],
                 _r(r["ppa"], r["targets"], 3),
+                r["team_db"],
+                _r(r["targets"], r["team_db"], 3),
                 *_weeks(r),
             ]
         )
@@ -922,7 +925,9 @@ def build_targets_table(ctx: Context, spec: TabSpec) -> TableWrite:
             ctx,
             "Targets = pass attempts with a "
             "named receiver (throwaways/spikes excluded); Tgt share = targets / team pass "
-            "attempts; RZ = target inside the 20",
+            "attempts; RZ = target inside the 20; routes are not published by any free source, so "
+            "Tgt/team DB (targets per team dropback in the player's games) is the closest proxy "
+            "to targets per route run",
         ),
     )
 
@@ -1312,6 +1317,38 @@ def _finish(
                 )
             except Exception as exc:
                 r.warn(f"display tab {specs[disp].name} setup failed: {exc}")
+    if not dry_run and "players" in r.stages_ok:
+        from cfb_dfs.sheets.format import PASSING_RULES, RUSHING_RULES, TARGET_RULES
+
+        for key, rules in (
+            ("targets", TARGET_RULES),
+            ("passing", PASSING_RULES),
+            ("rushing", RUSHING_RULES),
+        ):
+            try:
+                writer.format_tab(specs[key], rules, week_block=True)
+            except Exception as exc:
+                r.warn(f"formatting {specs[key].name} failed: {exc}")
+    if not dry_run:
+        for stage, key in (
+            ("pace", "pace_raw"),
+            ("epa", "epa_raw"),
+            ("rroe", "rroe_raw"),
+            ("players", "targets_raw"),
+        ):
+            if stage in r.stages_failed:
+                msg = (
+                    f"STALE: {stage} failed on {s.now():%Y-%m-%d %H:%M %Z} "
+                    f"({r.stages_failed[stage][:200]}); rows below are from the last good run"
+                )
+                try:
+                    writer.mark_stale(specs[key], msg)
+                except Exception as exc:
+                    log.warning("stale_mark_failed", tab=key, error=str(exc))
+        try:
+            writer.protect_tabs(list(specs.values()), s.sheet.protected_editor_emails)
+        except Exception as exc:
+            r.warn(f"protecting raw tabs failed: {exc}")
     if not dry_run and any(t.spec.name == specs["main"].name for t in tables):
         try:
             writer.format_main(specs["main"])
