@@ -65,7 +65,7 @@ class CfbdClient:
 
     def _cached(
         self,
-        season: int,
+        season: int | str,
         namespace: str,
         ttl_hours: float | None,
         path: str,
@@ -122,11 +122,18 @@ class CfbdClient:
         return [GameLines.model_validate(row) for row in data]
 
     def plays(
-        self, year: int, week: int, season_type: str = "regular", completed: bool = True
+        self,
+        year: int,
+        week: int,
+        season_type: str = "regular",
+        completed: bool = True,
+        prior_season: bool = False,
     ) -> list[dict[str, Any]]:
         """All plays of one week (every division). ~25 MB JSON; cached long when the
-        week is complete."""
-        ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
+        week is complete and forever for prior seasons (model training data)."""
+        ttl: float | None = self.ttl.plays_completed if completed else self.ttl.plays_current
+        if prior_season:
+            ttl = None
         params = {"year": year, "week": week, "seasonType": season_type}
         return list(self._cached(year, "cfbd", ttl, "/plays", params))
 
@@ -136,6 +143,18 @@ class CfbdClient:
         ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
         params = {"year": year, "week": week, "seasonType": season_type}
         return list(self._cached(year, "cfbd", ttl, "/drives", params))
+
+    def lines_season(
+        self, year: int, season_type: str = "regular", prior_season: bool = False
+    ) -> list[dict[str, Any]]:
+        """Every game's lines for a season in one call (model features)."""
+        ttl: float | None = None if prior_season else self.ttl.games
+        params = {"year": year, "seasonType": season_type}
+        return list(self._cached(year, "cfbd", ttl, "/lines", params))
+
+    def venues(self) -> list[dict[str, Any]]:
+        """All venues with coordinates and dome flag. Cached 30 days under season 'static'."""
+        return list(self._cached("static", "cfbd", 24 * 30, "/venues", {}))
 
     def ppa_teams(self, year: int, exclude_garbage_time: bool = True) -> list[dict[str, Any]]:
         params = {"year": year, "excludeGarbageTime": str(exclude_garbage_time).lower()}

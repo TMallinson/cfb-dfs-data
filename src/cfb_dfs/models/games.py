@@ -32,6 +32,8 @@ class Game(BaseModel):
     start_time_tbd: bool = Field(default=False, alias="startTimeTBD")
     completed: bool = False
     neutral_site: bool = Field(default=False, alias="neutralSite")
+    venue_id: int | None = Field(default=None, alias="venueId")
+    venue: str | None = None
     home_id: int = Field(alias="homeId")
     home_team: str = Field(alias="homeTeam")
     home_conference: str | None = Field(default=None, alias="homeConference")

@@ -71,7 +71,10 @@ class SheetWriter:
     def metadata(self, refresh: bool = False) -> dict[str, Any]:
         if self._meta is None or refresh:
             self._meta = self.client.get_metadata(
-                fields="sheets(properties(sheetId,title,index,hidden,gridProperties),protectedRanges)"
+                fields=(
+                    "sheets(properties(sheetId,title,index,hidden,gridProperties),"
+                    "protectedRanges,conditionalFormats)"
+                )
             )
         return self._meta
 
@@ -166,6 +169,28 @@ class SheetWriter:
             for s in self.metadata().get("sheets", [])
             if s.get("protectedRanges")
         }
+
+    def format_main(self, spec: TabSpec) -> None:
+        """Replace the main tab's conditional formats, number formats, column widths."""
+        from cfb_dfs.sheets.format import (
+            column_width_requests,
+            conditional_format_requests,
+            number_format_requests,
+        )
+
+        meta = self.metadata(refresh=True)
+        sheet = next(
+            (s for s in meta.get("sheets", []) if s["properties"]["title"] == spec.name), None
+        )
+        if sheet is None:
+            return
+        sid = sheet["properties"]["sheetId"]
+        existing = len(sheet.get("conditionalFormats", []))
+        reqs = conditional_format_requests(sid, spec.header, spec.header_row, existing)
+        reqs += number_format_requests(sid, spec.header, spec.header_row)
+        reqs += column_width_requests(sid, spec.header)
+        self.client.batch_update(reqs)
+        log.info("sheets.formatted", tab=spec.name, rules_replaced=existing)
 
     def delete_tabs(self, titles: list[str], dry_run: bool = False) -> list[str]:
         """Delete tabs. Tabs with owner-only protections cannot be deleted by the

@@ -56,12 +56,17 @@ class PffCsvConfig(BaseModel):
     dir: Path = Path("data/manual/pff")
 
 
+class OpenMeteoConfig(BaseModel):
+    enabled: bool = True
+
+
 class SourcesConfig(BaseModel):
     cfbd: CfbdConfig = CfbdConfig()
     espn: EspnConfig = EspnConfig()
     sportsdataverse: SportsdataverseConfig = SportsdataverseConfig()
     draftkings: DraftKingsConfig = DraftKingsConfig()
     pff_csv: PffCsvConfig = PffCsvConfig()
+    openmeteo: OpenMeteoConfig = OpenMeteoConfig()
 
 
 class KickoffWindow(BaseModel):
@@ -82,12 +87,20 @@ class GarbageTime(BaseModel):
     q4: int | None = 14
 
 
+class RroeConfig(BaseModel):
+    train_seasons: list[int] = [2025, 2026]
+    holdout_fraction: float = 0.2
+    early_downs: list[int] = [1, 2]
+    min_plays: int = 20
+
+
 class MetricsConfig(BaseModel):
     garbage_time: GarbageTime = GarbageTime()
     two_minute_filter: bool = True
     include_scrambles_in_dropback: bool = False
     recent_games_window: int = 3
     rank_population: str = "fbs"
+    rroe: RroeConfig = RroeConfig()
 
 
 class TabNames(BaseModel):
@@ -97,6 +110,7 @@ class TabNames(BaseModel):
     pace_raw: str = "Pace Raw"
     epa_raw: str = "EPA Raw"
     rroe_raw: str = "RROE Raw"
+    weather_raw: str = "Weather Raw"
     teams: str = "Teams"
     targets_raw: str = "Targets Raw"
     passing_raw: str = "Passing Raw"

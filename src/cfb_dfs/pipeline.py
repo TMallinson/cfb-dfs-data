@@ -32,10 +32,11 @@ from cfb_dfs.transform.vegas import TeamLine, all_team_lines
 
 log = get_logger(__name__)
 
-ALL_STAGES = ["slates", "vegas", "pace", "epa", "rroe", "players"]
-IMPLEMENTED = {"slates", "vegas", "pace", "epa"}
+ALL_STAGES = ["slates", "vegas", "weather", "pace", "epa", "rroe", "players"]
+IMPLEMENTED = {"slates", "vegas", "weather", "pace", "epa", "rroe"}
 OVERRIDES_PATH = "data/overrides/team_aliases.yaml"
-MAIN_NCOLS = 30
+MAIN_NCOLS = 34
+RROE_REPORT_PATH = "reports/rroe_model_report.md"
 
 
 @dataclass
@@ -85,6 +86,9 @@ class Context:
     pace: pl.DataFrame | None = None
     epa: pl.DataFrame | None = None
     ppa: dict[int, dict[str, float | None]] = field(default_factory=dict)
+    weather: dict[int, Any] = field(default_factory=dict)
+    rroe: pl.DataFrame | None = None
+    rroe_report: Any = None
 
     @property
     def fbs_ids(self) -> set[int]:
@@ -317,7 +321,115 @@ def stage_epa(ctx: Context) -> None:
             ctx.result.warn(f"CFBD PPA cross-check unavailable: {exc}")
 
 
-STAGE_FUNCS = {"slates": stage_slates, "vegas": stage_vegas, "pace": stage_pace, "epa": stage_epa}
+def stage_weather(ctx: Context) -> None:
+    from cfb_dfs.sources.openmeteo import fetch_forecasts
+    from cfb_dfs.transform.weather import summarize, venues_from_rows
+
+    s = ctx.settings
+    if not s.sources.openmeteo.enabled:
+        raise SourceError("Open-Meteo disabled in config")
+    if ctx.cfbd is None:
+        raise SourceError("CFBD client disabled; venue coordinates unavailable")
+    venues = venues_from_rows(ctx.cfbd.venues())
+    games = [gs.game for gs in ctx.slates] or ctx.games
+    points: list[tuple[float, float]] = []
+    point_index: dict[int, int] = {}
+    for g in games:
+        v = venues.get(g.venue_id or -1)
+        if v and not v.dome and v.latitude is not None and v.longitude is not None:
+            key = (round(v.latitude, 3), round(v.longitude, 3))
+            if key not in points:
+                points.append(key)
+            point_index[g.id] = points.index(key)
+    forecasts = fetch_forecasts(ctx.cache, s.season, ctx.week, points)
+    for g in games:
+        fc = forecasts[point_index[g.id]] if g.id in point_index else None
+        ctx.weather[g.id] = summarize(g, venues.get(g.venue_id or -1), fc)
+    n_ok = sum(1 for w in ctx.weather.values() if w.temp_f is not None or w.dome)
+    ctx.result.sources_used.append(f"open-meteo:{len(points)} venues")
+    log.info("stage.weather", games=len(ctx.weather), with_forecast=n_ok)
+    if games and n_ok == 0:
+        raise SourceError("No game received a forecast")
+
+
+def stage_rroe(ctx: Context) -> None:
+    from cfb_dfs.transform.plays import normalize_plays
+    from cfb_dfs.transform.rroe import (
+        feature_frame,
+        lines_frame,
+        report_markdown,
+        team_rroe,
+        train,
+    )
+
+    s = ctx.settings
+    cfg = s.metrics.rroe
+    assert ctx.cfbd is not None and ctx.teams is not None
+    current = load_plays(ctx)
+    pref = s.sources.cfbd.line_provider_preference
+    frames: list[pl.DataFrame] = []
+    for season in cfg.train_seasons:
+        if season == s.season:
+            plays = current
+            lines = lines_frame(ctx.cfbd.lines_season(season), pref)
+        else:
+            weeks = range(1, 17)
+            parts = []
+            for wk in weeks:
+                raw = ctx.cfbd.plays(season, wk, s.season_type, completed=True, prior_season=True)
+                if raw:
+                    parts.append(normalize_plays(raw, ctx.teams, week=wk))
+            if not parts:
+                ctx.result.warn(f"no plays for training season {season}")
+                continue
+            plays = prepare_plays(pl.concat(parts, how="vertical"), s.metrics)
+            lines = lines_frame(ctx.cfbd.lines_season(season, prior_season=True), pref)
+        ff = feature_frame(plays, lines).filter(pl.col("pos_team_id").is_in(list(ctx.fbs_ids)))
+        frames.append(ff.with_columns(pl.lit(season).alias("season")))
+        log.info("rroe.training_data", season=season, plays=ff.height)
+    rows = pl.concat(frames, how="vertical")
+    model, rep = train(rows, holdout_frac=cfg.holdout_fraction)
+    rep.seasons = list(cfg.train_seasons)
+    rep.trained_at = f"{s.now():%Y-%m-%d %H:%M %Z}"
+    ctx.rroe_report = rep
+    cur_rows = rows.filter(pl.col("season") == s.season)
+    ctx.rroe = team_rroe(
+        model,
+        cur_rows,
+        ctx.game_order(),
+        ctx.fbs_ids,
+        s.metrics.recent_games_window,
+        tuple(cfg.early_downs),
+    )
+    try:
+        from pathlib import Path
+
+        Path(RROE_REPORT_PATH).parent.mkdir(parents=True, exist_ok=True)
+        Path(RROE_REPORT_PATH).write_text(report_markdown(rep), encoding="utf-8")
+    except OSError as exc:
+        ctx.result.warn(f"could not write RROE report: {exc}")
+    ctx.result.sources_used.append(
+        f"rroe-model(train {rep.n_train} plays, ll {rep.log_loss_model})"
+    )
+    log.info(
+        "stage.rroe",
+        teams=ctx.rroe.height,
+        log_loss=rep.log_loss_model,
+        baseline=rep.log_loss_baseline,
+        brier=rep.brier_model,
+    )
+    if rep.log_loss_model >= rep.log_loss_baseline:
+        raise SourceError("RROE model is no better than the constant baseline; refusing to rank")
+
+
+STAGE_FUNCS = {
+    "slates": stage_slates,
+    "vegas": stage_vegas,
+    "weather": stage_weather,
+    "pace": stage_pace,
+    "epa": stage_epa,
+    "rroe": stage_rroe,
+}
 
 
 # -- tables ----------------------------------------------------------------------------------
@@ -443,6 +555,76 @@ def build_epa_table(ctx: Context, spec: TabSpec) -> TableWrite:
     return TableWrite(spec, rows, title=title)
 
 
+def build_weather_table(ctx: Context, spec: TabSpec) -> TableWrite:
+    assert ctx.teams is not None
+    s = ctx.settings
+    now = s.now().strftime("%Y-%m-%d %H:%M %Z")
+    rows: list[list[Cell]] = []
+    by_id = {gs.game.id: gs.game for gs in ctx.slates} or {g.id: g for g in ctx.games}
+    for gid, w in ctx.weather.items():
+        g = by_id.get(gid)
+        if g is None:
+            continue
+        rows.append(
+            [
+                s.season,
+                ctx.week,
+                gid,
+                fmt_kick(g.start_date, s),
+                ctx.teams.abbr(g.away_id),
+                ctx.teams.abbr(g.home_id),
+                w.venue,
+                w.city,
+                w.state,
+                "Y" if w.dome else "",
+                w.temp_f,
+                w.precip_prob,
+                w.precip_in,
+                w.wind_mph,
+                w.gust_mph,
+                w.condition,
+                w.note,
+                now,
+            ]
+        )
+    rows.sort(key=lambda r: str(r[3]))
+    return TableWrite(spec, rows)
+
+
+def build_rroe_table(ctx: Context, spec: TabSpec) -> TableWrite:
+    assert ctx.rroe is not None
+    rep = ctx.rroe_report
+    cfg = ctx.settings.metrics.rroe
+    n = ctx.rroe.filter(pl.col("rroe_rank").is_not_null()).height
+    rows: list[list[Cell]] = []
+    for r in ctx.rroe.filter(pl.col("team_id").is_in(list(ctx.fbs_ids))).to_dicts():
+        note = "low sample" if (r["plays"] or 0) < cfg.min_plays else None
+        rows.append(
+            [
+                *_team_cols(ctx, int(r["team_id"])),
+                r["games"],
+                r["plays"],
+                r["rush_rate"],
+                r["exp_rush_rate"],
+                r["rroe"],
+                r["rroe_rank"],
+                r["rroe_l3"],
+                r["rroe_rank_l3"],
+                r["plays_l3"],
+                note,
+            ]
+        )
+    title = (
+        f"RROE% = (actual rushes - expected rushes) / plays x 100 on 1st/2nd down, garbage time "
+        f"excluded · rank of {n} FBS teams (1 = most run-heavy vs expectation) · model: gradient "
+        f"boosting on down/distance/yards-to-goal/score/clock/timeouts/spread/total, trained on "
+        f"{rep.seasons if rep else '?'} ({rep.n_train if rep else '?'} plays), holdout log loss "
+        f"{rep.log_loss_model if rep else '?'} vs baseline {rep.log_loss_baseline if rep else '?'} "
+        f"· see reports/rroe_model_report.md · updated {ctx.settings.now():%Y-%m-%d %H:%M %Z}"
+    )
+    return TableWrite(spec, rows, title=title)
+
+
 def _mins(secs: Any) -> Cell:
     return round(secs / 60, 1) if secs else None
 
@@ -521,6 +703,7 @@ def build_main_rows(ctx: Context) -> list[list[Cell]]:
     s = ctx.settings
     pace = _rows_by_team(ctx.pace)
     epa = _rows_by_team(ctx.epa)
+    rroe = _rows_by_team(ctx.rroe)
     rows: list[list[Cell]] = []
     for gs in ctx.slates:
         g = gs.game
@@ -533,6 +716,8 @@ def build_main_rows(ctx: Context) -> list[list[Cell]]:
             is_fbs = ctx.teams.is_fbs(tid)
             p = pace.get(tid, {})
             e = epa.get(tid, {})
+            rr = rroe.get(tid, {})
+            w = ctx.weather.get(g.id)
             na: Cell = None if is_fbs else "FCS"
 
             def rk(d: dict[str, Any], key: str, fill: Cell = na) -> Cell:
@@ -546,14 +731,18 @@ def build_main_rows(ctx: Context) -> list[list[Cell]]:
                 tl.total,
                 tl.spread,
                 tl.implied_total,
+                w.temp_f if w else None,
+                w.precip_prob if w else None,
+                w.wind_mph if w else None,
+                (w.condition or w.note) if w else None,
                 p.get("plays_per_min"),
                 rk(p, "pace_rank"),
                 e.get("off_epa_db"),
                 rk(e, "off_epa_db_rank"),
                 e.get("off_epa_rush"),
                 rk(e, "off_epa_rush_rank"),
-                None,
-                na,  # RROE (Phase 5)
+                rk(rr, "rroe", None),
+                rk(rr, "rroe_rank"),
                 e.get("def_epa_db"),
                 rk(e, "def_epa_db_rank"),
                 e.get("def_epa_rush"),
@@ -590,7 +779,9 @@ def main_title(ctx: Context) -> str:
         f"lines: {ctx.line_source}",
     ]
     if ctx.pace is not None:
-        parts.append(f"pace/EPA through week {ctx.week - 1}")
+        parts.append(f"pace/EPA/RROE through week {ctx.week - 1}")
+    if ctx.weather:
+        parts.append("weather: Open-Meteo at kickoff")
     if r.warnings:
         parts.append(f"{len(r.warnings)} warning(s), see Log tab")
     return " · ".join(parts)
@@ -677,6 +868,10 @@ def run_pipeline(
         tables.append(build_pace_table(ctx, specs["pace_raw"]))
     if "epa" in result.stages_ok:
         tables.append(build_epa_table(ctx, specs["epa_raw"]))
+    if "weather" in result.stages_ok:
+        tables.append(build_weather_table(ctx, specs["weather_raw"]))
+    if "rroe" in result.stages_ok:
+        tables.append(build_rroe_table(ctx, specs["rroe_raw"]))
     if "vegas" in wanted and "vegas" not in result.stages_ok:
         # Lines failed: keep the previous main tab rather than blanking it.
         result.warn("main tab left unchanged because the vegas stage failed")
@@ -707,6 +902,11 @@ def _finish(
             tables.append(TableWrite(specs["log"], []))
     report = writer.write_tables(tables, dry_run=dry_run)
     r.rows_written = report.rows_written
+    if not dry_run and any(t.spec.name == specs["main"].name for t in tables):
+        try:
+            writer.format_main(specs["main"])
+        except Exception as exc:  # formatting is cosmetic; never fail the run
+            r.warn(f"main tab formatting failed: {exc}")
     r.duration_s = time.monotonic() - started
     if dry_run:
         for tab, summary in report.diff.items():

@@ -26,6 +26,10 @@ MAIN_HEADER = [
     "Total",
     "Spread",
     "ITT",
+    "Temp °F",
+    "Precip %",
+    "Wind mph",
+    "Weather",
     "Pace (plays/min)",
     "Pace Rk",
     "Off EPA/DB",
@@ -131,6 +135,44 @@ EPA_RAW_HEADER = [
     "CFBD PPA def rush",
 ]
 
+WEATHER_RAW_HEADER = [
+    "Season",
+    "Week",
+    "Game id",
+    "Kickoff (CT)",
+    "Away",
+    "Home",
+    "Venue",
+    "City",
+    "State",
+    "Dome",
+    "Temp °F (kickoff)",
+    "Precip % (max, game window)",
+    "Precip in (game window)",
+    "Wind mph (mean)",
+    "Gust mph (max)",
+    "Condition",
+    "Note",
+    "Fetched (CT)",
+]
+
+RROE_RAW_HEADER = [
+    "Team id",
+    "Team",
+    "School",
+    "Conf",
+    "Games",
+    "Early-down plays",
+    "Rush rate",
+    "Expected rush rate",
+    "RROE%",
+    "Rank",
+    "RROE% L3",
+    "Rank L3",
+    "Plays L3",
+    "Note",
+]
+
 TEAMS_HEADER = [
     "Team id",
     "Abbrev",
@@ -180,6 +222,15 @@ def build_specs(tabs: TabNames) -> dict[str, TabSpec]:
         "pace_raw": TabSpec(
             tabs.pace_raw,
             PACE_RAW_HEADER,
+            frozen_rows=2,
+            frozen_cols=3,
+            header_row=2,
+            protected=True,
+        ),
+        "weather_raw": TabSpec(tabs.weather_raw, WEATHER_RAW_HEADER, frozen_cols=6, protected=True),
+        "rroe_raw": TabSpec(
+            tabs.rroe_raw,
+            RROE_RAW_HEADER,
             frozen_rows=2,
             frozen_cols=3,
             header_row=2,
