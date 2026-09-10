@@ -435,6 +435,7 @@ STAGE_FUNCS = {
 # -- reload previous outputs for stages not run this time -----------------------------------
 
 PACE_MAP = {"Plays/min (neutral)": "plays_per_min", "Plays/min L3": "plays_per_min_l3"}
+RANK_KEYS = {"plays_per_min": "pace_rank", "plays_per_min_l3": "pace_rank_l3"}
 EPA_MAP = {
     "Off EPA/DB": "off_epa_db",
     "Off EPA/Rush": "off_epa_rush",
@@ -457,8 +458,8 @@ def sheet_rows_to_metrics(
     for i, h in enumerate(header):
         if h in mapping:
             cols[i] = mapping[h]
-            if i + 1 < len(header) and header[i + 1] in ("Rk", "Rank"):
-                cols[i + 1] = mapping[h] + "_rank"
+            if i + 1 < len(header) and header[i + 1] in ("Rk", "Rank", "Rank L3"):
+                cols[i + 1] = RANK_KEYS.get(mapping[h], mapping[h] + "_rank")
     recs: list[dict[str, Any]] = []
     for r in rows:
         try:
@@ -505,21 +506,21 @@ def reload_previous(
                 gid = int(r[idx["Game id"]])
             except (TypeError, ValueError, IndexError):
                 continue
-
-            def cell(name: str) -> Any:
-                i = idx[name]
-                return r[i] if i < len(r) and r[i] != "" else None
-
             ctx.weather[gid] = GameWeather(
                 gid,
-                cell("Venue"),
-                cell("Dome") == "Y",
-                temp_f=cell("Temp °F (kickoff)"),
-                precip_prob=cell("Precip % (max, game window)"),
-                wind_mph=cell("Wind mph (mean)"),
-                condition=cell("Condition"),
-                note=cell("Note"),
+                _cell(r, idx, "Venue"),
+                _cell(r, idx, "Dome") == "Y",
+                temp_f=_cell(r, idx, "Temp °F (kickoff)"),
+                precip_prob=_cell(r, idx, "Precip % (max, game window)"),
+                wind_mph=_cell(r, idx, "Wind mph (mean)"),
+                condition=_cell(r, idx, "Condition"),
+                note=_cell(r, idx, "Note"),
             )
+
+
+def _cell(row: list[Any], idx: dict[str, int], name: str) -> Any:
+    i = idx[name]
+    return row[i] if i < len(row) and row[i] != "" else None
 
 
 # -- tables ----------------------------------------------------------------------------------

@@ -9,7 +9,7 @@ def test_pace_rows_roundtrip():
     df = sheet_rows_to_metrics(PACE_RAW_HEADER, rows, PACE_MAP)
     r = df.row(0, named=True)
     assert r["team_id"] == 333 and r["plays_per_min"] == 2.5 and r["pace_rank"] == 3
-    assert r["plays_per_min_l3"] == 2.4 and r["plays_per_min_l3_rank"] == 4
+    assert r["plays_per_min_l3"] == 2.4 and r["pace_rank_l3"] == 4
 
 
 def test_epa_rows_take_following_rank_columns_and_skip_junk():
