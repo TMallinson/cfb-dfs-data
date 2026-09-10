@@ -1380,6 +1380,15 @@ def _finish(
             )
         except Exception:  # logging must never fail the run
             log.exception("log_tab.append_failed")
+    if ctx.cfbd is not None and not dry_run and len(r.stages_ok) >= 4:
+        try:
+            info = ctx.cfbd.info()
+            remaining = int(info.get("remainingCalls") or 0)
+            log.info("cfbd.budget", remaining=remaining, limit=info.get("monthlyLimit"))
+            if remaining < 100:
+                r.warn(f"CFBD budget low: {remaining} calls left this month")
+        except Exception as exc:
+            log.warning("cfbd.budget_check_failed", error=str(exc))
     log.info(
         "pipeline.done",
         status=r.status,
