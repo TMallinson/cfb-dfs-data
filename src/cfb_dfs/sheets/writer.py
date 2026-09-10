@@ -325,6 +325,31 @@ class SheetWriter:
             [{"range": a1(spec.name, "A1"), "values": [[message]]}], value_input="RAW"
         )
 
+    def order_tabs(self, titles: list[str]) -> None:
+        """Move the listed tabs to the front in the given order (idempotent; tabs not
+        listed keep their relative order after them)."""
+        meta = self.metadata(refresh=True)
+        current = [
+            s["properties"]["title"]
+            for s in sorted(meta.get("sheets", []), key=lambda s: s["properties"]["index"])
+        ]
+        wanted = [t for t in titles if t in current] + [t for t in current if t not in titles]
+        if wanted == current:
+            return
+        ids = self.sheet_ids()
+        reqs = [
+            {
+                "updateSheetProperties": {
+                    "properties": {"sheetId": ids[t], "index": i},
+                    "fields": "index",
+                }
+            }
+            for i, t in enumerate(wanted)
+        ]
+        self.client.batch_update(reqs)
+        self.metadata(refresh=True)
+        log.info("sheets.reordered", order=wanted)
+
     def delete_tabs(self, titles: list[str], dry_run: bool = False) -> list[str]:
         """Delete tabs. Tabs with owner-only protections cannot be deleted by the
         service account; those are hidden instead and reported."""

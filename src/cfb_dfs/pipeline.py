@@ -37,6 +37,24 @@ IMPLEMENTED = {"slates", "vegas", "weather", "pace", "epa", "rroe", "players"}
 OVERRIDES_PATH = "data/overrides/team_aliases.yaml"
 MAIN_NCOLS = 34
 RROE_REPORT_PATH = "reports/rroe_model_report.md"
+RUN_SUMMARY_PATH = "reports/run_summary.md"
+TAB_ORDER = [
+    "main",
+    "targets",
+    "passing",
+    "rushing",
+    "config",
+    "vegas_raw",
+    "weather_raw",
+    "pace_raw",
+    "epa_raw",
+    "rroe_raw",
+    "targets_raw",
+    "passing_raw",
+    "rushing_raw",
+    "teams",
+    "log",
+]
 
 
 @dataclass
@@ -1349,6 +1367,11 @@ def _finish(
             writer.protect_tabs(list(specs.values()), s.sheet.protected_editor_emails)
         except Exception as exc:
             r.warn(f"protecting raw tabs failed: {exc}")
+    if not dry_run:
+        try:
+            writer.order_tabs([specs[k].name for k in TAB_ORDER if k in specs])
+        except Exception as exc:
+            r.warn(f"reordering tabs failed: {exc}")
     if not dry_run and any(t.spec.name == specs["main"].name for t in tables):
         try:
             writer.format_main(specs["main"])
@@ -1389,6 +1412,10 @@ def _finish(
                 r.warn(f"CFBD budget low: {remaining} calls left this month")
         except Exception as exc:
             log.warning("cfbd.budget_check_failed", error=str(exc))
+    try:
+        write_run_summary(ctx, dry_run)
+    except OSError as exc:
+        log.warning("run_summary.write_failed", error=str(exc))
     log.info(
         "pipeline.done",
         status=r.status,
@@ -1401,3 +1428,45 @@ def _finish(
         sheet_reads=writer.client.reads,
         sheet_writes=writer.client.writes,
     )
+
+
+def run_summary_markdown(ctx: Context, dry_run: bool) -> str:
+    r = ctx.result
+    s = ctx.settings
+    lines = [
+        f"## cfb-dfs run · {s.now():%Y-%m-%d %H:%M %Z} · season {s.season} week {ctx.week}"
+        + (" · DRY RUN" if dry_run else ""),
+        "",
+        f"**Status:** {r.status}",
+        "",
+        "| stage | result |",
+        "|---|---|",
+    ]
+    for st in ALL_STAGES:
+        if st in r.stages_ok:
+            lines.append(f"| {st} | ok |")
+        elif st in r.stages_failed:
+            lines.append(f"| {st} | FAILED: {r.stages_failed[st][:300]} |")
+    if r.rows_written:
+        lines += ["", "| tab | rows |", "|---|---|"]
+        lines += [f"| {tab} | {n} |" for tab, n in r.rows_written.items()]
+    lines += ["", f"**Sources:** {', '.join(r.sources_used) or 'none'}", ""]
+    if r.warnings:
+        lines += ["**Warnings:**", ""] + [f"- {w}" for w in r.warnings] + [""]
+    lines.append(
+        f"Duration {r.duration_s:.1f}s · CFBD calls {ctx.cfbd.calls_made if ctx.cfbd else 0}"
+    )
+    return "\n".join(lines) + "\n"
+
+
+def write_run_summary(ctx: Context, dry_run: bool) -> None:
+    import os
+    from pathlib import Path
+
+    text = run_summary_markdown(ctx, dry_run)
+    Path(RUN_SUMMARY_PATH).parent.mkdir(parents=True, exist_ok=True)
+    Path(RUN_SUMMARY_PATH).write_text(text, encoding="utf-8")
+    step_summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if step_summary:
+        with open(step_summary, "a", encoding="utf-8") as fh:
+            fh.write(text)

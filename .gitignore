@@ -14,3 +14,4 @@ data/cache/
 .ruff_cache/
 .pytest_cache/.mypy_cache/
 data/manual/**/*.csv
+reports/run_summary.md

@@ -1,0 +1,99 @@
+name: cfb-dfs pipeline
+
+on:
+  schedule:
+    # Times are UTC. During CDT (until early November) 11:00 UTC = 06:00 CT,
+    # 13:00 UTC = 08:00 CT, 01:00 UTC = 20:00 CT the previous evening.
+    # After the switch to CST they land one hour earlier local (05:00 / 07:00 / 19:00).
+    - cron: "0 11 * * *"      # full rebuild, daily
+    - cron: "0 13 * * 2-6"    # lines-only, Tue-Sat morning
+    - cron: "0 1 * * 3-7"     # lines-only, Tue-Sat evening (Wed-Sun in UTC)
+  workflow_dispatch:
+    inputs:
+      stages:
+        description: "Comma list of stages (blank = all): slates,vegas,weather,pace,epa,rroe,players"
+        required: false
+        default: ""
+      week:
+        description: "Week override (blank = auto)"
+        required: false
+        default: ""
+      dry_run:
+        description: "Dry run (compute + diff, write nothing)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: cfb-dfs-sheet
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CFBD_API_KEY: ${{ secrets.CFBD_API_KEY }}
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      GOOGLE_SERVICE_ACCOUNT_B64: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_B64 }}
+      TZ: America/Chicago
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install Python and dependencies
+        run: |
+          uv python install 3.12
+          uv sync --frozen --no-dev
+
+      - name: Restore data cache
+        uses: actions/cache@v4
+        with:
+          path: data/cache
+          key: cfb-dfs-cache-${{ github.run_id }}
+          restore-keys: |
+            cfb-dfs-cache-
+
+      - name: Decide stages
+        id: plan
+        run: |
+          STAGES="${{ github.event.inputs.stages }}"
+          if [ "${{ github.event_name }}" = "schedule" ] && [ "${{ github.event.schedule }}" != "0 11 * * *" ]; then
+            STAGES="slates,vegas,weather"
+          fi
+          ARGS=""
+          [ -n "$STAGES" ] && ARGS="$ARGS --only $STAGES"
+          [ -n "${{ github.event.inputs.week }}" ] && ARGS="$ARGS --week ${{ github.event.inputs.week }}"
+          [ "${{ github.event.inputs.dry_run }}" = "true" ] && ARGS="$ARGS --dry-run"
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "Running with:$ARGS (stages blank = all)"
+
+      - name: Smoke test credentials
+        run: uv run python -m cfb_dfs smoke
+
+      - name: Run pipeline
+        run: uv run python -m cfb_dfs run ${{ steps.plan.outputs.args }}
+
+      - name: Publish run summary
+        if: always()
+        run: |
+          if [ -f reports/run_summary.md ]; then
+            cat reports/run_summary.md
+          else
+            echo "## cfb-dfs run: no summary produced (crashed before the pipeline started)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Keep model report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports-${{ github.run_id }}
+          path: reports/
+          if-no-files-found: ignore
+          retention-days: 14
