@@ -432,6 +432,96 @@ STAGE_FUNCS = {
 }
 
 
+# -- reload previous outputs for stages not run this time -----------------------------------
+
+PACE_MAP = {"Plays/min (neutral)": "plays_per_min", "Plays/min L3": "plays_per_min_l3"}
+EPA_MAP = {
+    "Off EPA/DB": "off_epa_db",
+    "Off EPA/Rush": "off_epa_rush",
+    "Def EPA/DB": "def_epa_db",
+    "Def EPA/Rush": "def_epa_rush",
+    "Off EPA/DB L3": "off_epa_db_l3",
+    "Off EPA/Rush L3": "off_epa_rush_l3",
+    "Def EPA/DB L3": "def_epa_db_l3",
+    "Def EPA/Rush L3": "def_epa_rush_l3",
+}
+RROE_MAP = {"RROE%": "rroe"}
+
+
+def sheet_rows_to_metrics(
+    header: list[str], rows: list[list[Any]], mapping: dict[str, str]
+) -> pl.DataFrame | None:
+    """Rebuild a per-team metrics frame from a raw tab. A "Rk"/"Rank" column directly
+    after a mapped metric becomes `<key>_rank`."""
+    cols: dict[int, str] = {}
+    for i, h in enumerate(header):
+        if h in mapping:
+            cols[i] = mapping[h]
+            if i + 1 < len(header) and header[i + 1] in ("Rk", "Rank"):
+                cols[i + 1] = mapping[h] + "_rank"
+    recs: list[dict[str, Any]] = []
+    for r in rows:
+        try:
+            tid = int(r[0])
+        except (TypeError, ValueError, IndexError):
+            continue
+        rec: dict[str, Any] = {"team_id": tid}
+        for i, key in cols.items():
+            v = r[i] if i < len(r) else None
+            rec[key] = v if isinstance(v, int | float) else None
+        recs.append(rec)
+    return pl.DataFrame(recs) if recs else None
+
+
+def reload_previous(
+    ctx: Context, writer: SheetWriter, specs: dict[str, TabSpec], wanted: list[str]
+) -> None:
+    """For metric stages not requested this run, keep the main tab's columns populated
+    from the last written raw tabs instead of blanking them."""
+    from cfb_dfs.transform.weather import GameWeather
+
+    todo = [
+        ("pace", "pace_raw", PACE_MAP),
+        ("epa", "epa_raw", EPA_MAP),
+        ("rroe", "rroe_raw", RROE_MAP),
+    ]
+    for stage, spec_key, mapping in todo:
+        if stage in wanted:
+            continue
+        spec = specs[spec_key]
+        rows = writer.read_table(spec)
+        df = sheet_rows_to_metrics(list(spec.header), rows, mapping)
+        if df is not None:
+            setattr(ctx, stage, df)
+            log.info("pipeline.reused_previous", stage=stage, teams=df.height)
+    if "weather" not in wanted:
+        spec = specs["weather_raw"]
+        header = list(spec.header)
+        idx = {h: i for i, h in enumerate(header)}
+        for r in writer.read_table(spec):
+            try:
+                if int(r[idx["Week"]]) != ctx.week or int(r[idx["Season"]]) != ctx.settings.season:
+                    continue
+                gid = int(r[idx["Game id"]])
+            except (TypeError, ValueError, IndexError):
+                continue
+
+            def cell(name: str) -> Any:
+                i = idx[name]
+                return r[i] if i < len(r) and r[i] != "" else None
+
+            ctx.weather[gid] = GameWeather(
+                gid,
+                cell("Venue"),
+                cell("Dome") == "Y",
+                temp_f=cell("Temp °F (kickoff)"),
+                precip_prob=cell("Precip % (max, game window)"),
+                wind_mph=cell("Wind mph (mean)"),
+                condition=cell("Condition"),
+                note=cell("Note"),
+            )
+
+
 # -- tables ----------------------------------------------------------------------------------
 
 
@@ -778,6 +868,7 @@ def main_title(ctx: Context) -> str:
         f"slates: {ctx.slate_source} ({len({gs.primary for gs in ctx.slates})})",
         f"lines: {ctx.line_source}",
     ]
+    parts.append(f"refreshed: {', '.join(r.stages_ok)}")
     if ctx.pace is not None:
         parts.append(f"pace/EPA/RROE through week {ctx.week - 1}")
     if ctx.weather:
@@ -858,6 +949,11 @@ def run_pipeline(
         )
         ctx.slates = assigned
         ctx.slate_source = "kickoff-window (fallback)"
+
+    try:
+        reload_previous(ctx, writer, specs, wanted)
+    except Exception as exc:  # cosmetic continuity only
+        result.warn(f"could not reload previous metrics: {exc}")
 
     tables: list[TableWrite] = [build_teams_table(ctx, specs["teams"])]
     if "vegas" in result.stages_ok:
