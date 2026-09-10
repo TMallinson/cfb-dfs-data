@@ -7,7 +7,7 @@ on:
     # After the switch to CST they land one hour earlier local (05:00 / 07:00 / 19:00).
     - cron: "0 11 * * *"      # full rebuild, daily
     - cron: "0 13 * * 2-6"    # lines-only, Tue-Sat morning
-    - cron: "0 1 * * 3-7"     # lines-only, Tue-Sat evening (Wed-Sun in UTC)
+    - cron: "0 1 * * 0,3-6"     # lines-only, Tue-Sat evening (Wed-Sun in UTC)
   workflow_dispatch:
     inputs:
       stages:

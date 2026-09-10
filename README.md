@@ -225,7 +225,7 @@ days, prior seasons forever. `--refresh` bypasses reads but still writes.
 |---------|-----|---------------------|--------|
 | daily | `0 11 * * *` | 06:00 / 05:00 | all |
 | Tue–Sat morning | `0 13 * * 2-6` | 08:00 / 07:00 | `slates,vegas,weather` |
-| Tue–Sat evening | `0 1 * * 3-7` | 20:00 / 19:00 | `slates,vegas,weather` |
+| Tue–Sat evening | `0 1 * * 0,3-6` | 20:00 / 19:00 | `slates,vegas,weather` |
 | manual (*Actions → Run workflow*) | — | — | inputs: stages, week, dry run |
 
 About 190 Actions minutes per month, under 10% of the Free plan. Each job
