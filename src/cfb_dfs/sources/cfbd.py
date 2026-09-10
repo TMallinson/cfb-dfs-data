@@ -121,6 +121,22 @@ class CfbdClient:
         data = self._cached(year, "cfbd", self.ttl.lines, "/lines", params)
         return [GameLines.model_validate(row) for row in data]
 
+    def plays(
+        self, year: int, week: int, season_type: str = "regular", completed: bool = True
+    ) -> list[dict[str, Any]]:
+        """All plays of one week (every division). ~25 MB JSON; cached long when the
+        week is complete."""
+        ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
+        params = {"year": year, "week": week, "seasonType": season_type}
+        return list(self._cached(year, "cfbd", ttl, "/plays", params))
+
+    def drives(
+        self, year: int, week: int, season_type: str = "regular", completed: bool = True
+    ) -> list[dict[str, Any]]:
+        ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
+        params = {"year": year, "week": week, "seasonType": season_type}
+        return list(self._cached(year, "cfbd", ttl, "/drives", params))
+
     def ppa_teams(self, year: int, exclude_garbage_time: bool = True) -> list[dict[str, Any]]:
         params = {"year": year, "excludeGarbageTime": str(exclude_garbage_time).lower()}
         data = self._cached(year, "cfbd", self.ttl.ppa, "/ppa/teams", params)

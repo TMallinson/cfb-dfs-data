@@ -55,7 +55,6 @@ addopts = "-q"
 markers = ["live: hits real network services (deselected by default)"]
 
 [tool.mypy]
-python_version = "3.11"
 packages = ["cfb_dfs"]
 mypy_path = "src"
 ignore_missing_imports = true

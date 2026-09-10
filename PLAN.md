@@ -89,18 +89,22 @@ home-perspective spread); `implied_total = total/2 − spread/2`; `line_source`
 column per row ("DraftKings via ESPN", or "CFBD:DraftKings"/"CFBD:consensus" on
 fallback). Opening lines kept when the source provides them.
 
-**Pace.** Situation-neutral plays/min = filtered offensive plays ÷ possession
-minutes, where possession seconds per play = clock at play start minus clock at
-next play start within the same drive (last play of a drive uses drive end
-clock). Seconds/play = 60 ÷ plays/min. Raw all-situations plays/min from
-`drives.offensive_plays / time_elapsed` is written alongside. Rank 1 = fastest.
+**Pace (revised 2026-09-09).** Drive-based, because play clocks are stale in
+about half of all games: plays/min = scrimmage plays on qualifying drives ÷
+drive elapsed minutes (CFBD `/drives`). Qualifying = not garbage time at drive
+start, not starting inside the final 2:00 of a half, not an END OF HALF/GAME
+kneel-out drive. Kneels, spikes, and no-play penalties are removed from play
+counts. Seconds/play = 60 ÷ plays/min. All-situations plays/min is written
+alongside. Rank 1 = fastest.
 
 **EPA buckets.**
-- Dropback = `pass_attempt` (incl. incompletions, INTs, throwaways) + `sack` +
-  scramble (rule: `rush` where `rusher_player_name` equals a player who threw a
-  pass in that game; documented, flag `include_scrambles_in_dropback`, default
-  on).
-- Rush = `rush` and not scramble, not kneel.
+- Dropback = CFBD playType in {Pass Reception, Pass Incompletion, Passing
+  Touchdown, Sack, Interception*}. No feed flags scrambles; QB rushes count as
+  rushes (`include_scrambles_in_dropback` exists but is off by default and only
+  works on feeds with passer names).
+- Rush = playType in {Rush, Rushing Touchdown}, not a kneel. Fumble/safety plays
+  count as plays for pace but sit in neither EPA bucket.
+- EPA per play = CFBD `ppa`.
 - Offense EPA/x = mean `EPA` over the team's offensive plays in the bucket;
   defense = mean `EPA` over plays where the team is `def_pos_team`. Offense rank
   1 = highest; defense rank 1 = lowest allowed.

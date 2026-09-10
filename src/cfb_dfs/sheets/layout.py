@@ -23,8 +23,6 @@ MAIN_HEADER = [
     "Slate",
     "Kickoff (CT)",
     "Team",
-    "Opp",
-    "H/A",
     "Total",
     "Spread",
     "ITT",
@@ -77,6 +75,62 @@ VEGAS_RAW_HEADER = [
     "Fetched (CT)",
 ]
 
+PACE_RAW_HEADER = [
+    "Team id",
+    "Team",
+    "School",
+    "Conf",
+    "Games",
+    "Plays/min (neutral)",
+    "Rank",
+    "Sec/play (neutral)",
+    "Neutral plays",
+    "Neutral minutes",
+    "Plays/min L3",
+    "Rank L3",
+    "Games L3",
+    "Plays/min (all situations)",
+    "All plays",
+    "All minutes",
+    "Drives",
+]
+
+EPA_RAW_HEADER = [
+    "Team id",
+    "Team",
+    "School",
+    "Conf",
+    "Games",
+    "Off EPA/DB",
+    "Rk",
+    "Off EPA/Rush",
+    "Rk",
+    "Off EPA/Play",
+    "Rk",
+    "Off dropbacks",
+    "Off rushes",
+    "Def EPA/DB",
+    "Rk",
+    "Def EPA/Rush",
+    "Rk",
+    "Def EPA/Play",
+    "Rk",
+    "Def dropbacks",
+    "Def rushes",
+    "Off EPA/DB L3",
+    "Rk",
+    "Off EPA/Rush L3",
+    "Rk",
+    "Def EPA/DB L3",
+    "Rk",
+    "Def EPA/Rush L3",
+    "Rk",
+    "CFBD PPA off pass",
+    "CFBD PPA off rush",
+    "CFBD PPA def pass",
+    "CFBD PPA def rush",
+]
+
 TEAMS_HEADER = [
     "Team id",
     "Abbrev",
@@ -123,6 +177,17 @@ def build_specs(tabs: TabNames) -> dict[str, TabSpec]:
     return {
         "main": TabSpec(tabs.main, MAIN_HEADER, frozen_rows=2, frozen_cols=3, header_row=2),
         "vegas_raw": TabSpec(tabs.vegas_raw, VEGAS_RAW_HEADER, frozen_cols=6, protected=True),
+        "pace_raw": TabSpec(
+            tabs.pace_raw,
+            PACE_RAW_HEADER,
+            frozen_rows=2,
+            frozen_cols=3,
+            header_row=2,
+            protected=True,
+        ),
+        "epa_raw": TabSpec(
+            tabs.epa_raw, EPA_RAW_HEADER, frozen_rows=2, frozen_cols=3, header_row=2, protected=True
+        ),
         "teams": TabSpec(tabs.teams, TEAMS_HEADER, frozen_cols=2, protected=True),
         "config": TabSpec(
             tabs.config, CONFIG_HEADER, frozen_rows=3, header_row=3, notes=CONFIG_NOTES

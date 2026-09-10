@@ -316,3 +316,27 @@ No `Log` or `Config` tab exists yet.
 - `sportsdataverse/cfbfastR-data` in-tree parquet — ends at 2021; README
   itself redirects to the release-based pipeline used above.
 - CFBD v1 host/paths — removed before 2025 season.
+
+## Addendum 2026-09-09 (Phase 4): team metrics moved to CFBD /plays + /drives
+
+While wiring pace and EPA, the sportsdataverse `espn_cfb_pbp` 2026 file turned
+out to be badly incomplete for week 1: 33 of 97 games had fewer than 60
+scrimmage plays (e.g. Boston College–Cincinnati had 15 plays total) and 18
+games had stale play clocks. CFBD `/plays?year=2026&week=1` (confirmed live,
+23 MB, 35,631 plays, 203 games) had every game, with `ppa` on 99.7% of
+scrimmage plays, and CFBD `/drives` (4,852 drives) had start/end/elapsed clocks.
+
+Decision: **pace, EPA and RROE now read CFBD `/plays` and `/drives`** (one call
+per week each; completed weeks cached 14 days, the current week 6 hours, so a
+daily rebuild costs about 3–5 CFBD calls). EPA = CFBD `ppa`. The sportsdataverse
+parquet feeds remain available in `sources/sportsdataverse.py` and will be
+re-evaluated for player names in Phase 6 against CFBD `/passing/plays` and
+`/rushing/plays`.
+
+Play-level clocks are stale in about half of all games in **both** feeds (they
+share ESPN as the origin), so pace is computed from drive elapsed time rather
+than play-to-play clock deltas; see `transform/pace.py` for the exact rule.
+
+Validation on the dev sheet: our offense EPA/dropback, EPA/rush and defense
+EPA/dropback correlate 0.95 / 0.94 / 0.95 with CFBD's own `/ppa/teams` season
+aggregates (garbage time excluded) across all 138 FBS teams.

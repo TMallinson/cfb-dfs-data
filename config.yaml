@@ -20,6 +20,8 @@ cache:
     calendar: 168
     teams: 168
     ppa: 6
+    plays_current: 6       # /plays and /drives for the in-progress week
+    plays_completed: 336   # completed weeks: refresh every 2 weeks
     parquet: 6
 
 sources:
@@ -54,7 +56,7 @@ metrics:
     q3: 21
     q4: 14
   two_minute_filter: true     # drop plays with <= 2:00 left in Q2 and Q4 for neutral pace
-  include_scrambles_in_dropback: true
+  include_scrambles_in_dropback: false   # feed has no scramble flag; true = ALL QB rushes -> dropbacks
   recent_games_window: 3
   rank_population: fbs        # rank denominator = teams with classification == fbs
 

@@ -9,6 +9,7 @@ venv/
 .cache/
 data/cache/
 *.parquet
+!tests/fixtures/*.parquet
 .DS_Store
 .ruff_cache/
 .pytest_cache/.mypy_cache/

@@ -21,6 +21,8 @@ class CacheTTL(BaseModel):
     calendar: float = 168
     teams: float = 168
     ppa: float = 6
+    plays_current: float = 6
+    plays_completed: float = 336
     parquet: float = 6
 
 
@@ -83,7 +85,7 @@ class GarbageTime(BaseModel):
 class MetricsConfig(BaseModel):
     garbage_time: GarbageTime = GarbageTime()
     two_minute_filter: bool = True
-    include_scrambles_in_dropback: bool = True
+    include_scrambles_in_dropback: bool = False
     recent_games_window: int = 3
     rank_population: str = "fbs"
 
