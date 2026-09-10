@@ -170,6 +170,85 @@ class SheetWriter:
             if s.get("protectedRanges")
         }
 
+    def setup_display_tab(
+        self,
+        spec: TabSpec,
+        raw_spec: TabSpec,
+        sort_header: str,
+        teams_tab: str,
+        default_team: str | None = None,
+    ) -> None:
+        """Dropdown-driven display tab: B1 team picker (data validation over the Teams
+        tab), header row, and a FILTER/SORT formula in A4 pointing at the raw tab.
+        Never clears B1, so the user's selection survives runs."""
+        ids = self.sheet_ids()
+        sid = ids.get(spec.name)
+        if sid is None:
+            return
+        raw = raw_spec.name
+        ncol = col_letter(len(raw_spec.header) - 1)
+        first = raw_spec.header_row + 1
+        sort_col = raw_spec.header.index(sort_header) + 1
+        formula = (
+            f"=IFERROR(SORT(FILTER('{raw}'!A{first}:{ncol}5000, '{raw}'!B{first}:B5000=$B$1), "
+            f'{sort_col}, FALSE), "No rows for " & $B$1 & " in {raw}")'
+        )
+        got = self.client.batch_get_values(
+            [a1(spec.name, "B1"), a1(teams_tab, "B2:B400")], render="UNFORMATTED_VALUE"
+        )
+        current = str((got[0].get("values") or [[""]])[0][0]) if got else ""
+        valid = [str(r[0]) for r in (got[1].get("values") or []) if r] if len(got) > 1 else []
+        data = [
+            {"range": a1(spec.name, "A1"), "values": [["Team:"]]},
+            {"range": a1(spec.name, "C1"), "values": [[spec.notes[0] if spec.notes else ""]]},
+            {"range": a1(spec.name, f"A{spec.header_row}"), "values": [list(spec.header)]},
+            {"range": a1(spec.name, f"A{spec.header_row + 1}"), "values": [[formula]]},
+        ]
+        if current not in valid and valid:
+            data.append({"range": a1(spec.name, "B1"), "values": [[default_team or valid[0]]]})
+        self.client.batch_update_values(data, value_input="USER_ENTERED")
+        self.client.batch_update(
+            [
+                {
+                    "setDataValidation": {
+                        "range": {
+                            "sheetId": sid,
+                            "startRowIndex": 0,
+                            "endRowIndex": 1,
+                            "startColumnIndex": 1,
+                            "endColumnIndex": 2,
+                        },
+                        "rule": {
+                            "condition": {
+                                "type": "ONE_OF_RANGE",
+                                "values": [{"userEnteredValue": f"='{teams_tab}'!$B$2:$B$400"}],
+                            },
+                            "showCustomUi": True,
+                            "strict": False,
+                        },
+                    }
+                },
+                {
+                    "repeatCell": {
+                        "range": {
+                            "sheetId": sid,
+                            "startRowIndex": 0,
+                            "endRowIndex": 1,
+                            "startColumnIndex": 1,
+                            "endColumnIndex": 2,
+                        },
+                        "cell": {
+                            "userEnteredFormat": {
+                                "textFormat": {"bold": True, "fontSize": 12},
+                                "backgroundColor": {"red": 1, "green": 0.95, "blue": 0.75},
+                            }
+                        },
+                        "fields": "userEnteredFormat(textFormat,backgroundColor)",
+                    }
+                },
+            ]
+        )
+
     def format_main(self, spec: TabSpec) -> None:
         """Replace the main tab's conditional formats, number formats, column widths."""
         from cfb_dfs.sheets.format import (

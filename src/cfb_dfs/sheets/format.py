@@ -1,4 +1,17 @@
-"""Conditional formatting and number formats for the main tab (idempotent)."""
+"""Conditional formatting and number formats for the main tab (idempotent).
+
+Scales are normalized so outliers don't dominate: relative columns anchor their
+colors at the 10th / 50th / 90th percentiles of the column instead of min / max.
+Weather columns use fixed, research-based thresholds instead:
+
+* Wind: passing efficiency declines measurably once sustained wind reaches
+  ~15 mph and sharply above 20 mph (Advanced Football Analytics 2012, PFF 2017,
+  Claremont/Wharton NFL studies: completion % falls from ~60% under 10 mph to
+  ~55% at 20+ mph, with pass attempts dropping and rushes rising past 15 mph).
+  So wind stays white through 12 mph, turns orange at 15, and is red at 20+.
+* Temperature: blue when cold (<= 35 F), white around 68 F, red when hot (>= 95 F).
+* Precipitation chance: white to 20%, orange at 50%, red at 80%+.
+"""
 
 from __future__ import annotations
 
@@ -11,26 +24,29 @@ WHITE = {"red": 1, "green": 1, "blue": 1}
 BLUE = {"red": 0.45, "green": 0.6, "blue": 0.9}
 ORANGE = {"red": 0.98, "green": 0.72, "blue": 0.4}
 
+P_LOW, P_MID, P_HIGH = "10", "50", "90"
+
 
 @dataclass(frozen=True)
 class ColorRule:
-    header: str  # column header text in the tab's header row
-    kind: str  # "high_good" | "low_good" | "diverging"
-    number_format: str | None = None  # e.g. "0.00", "0"
+    header: str
+    kind: str  # high_good | low_good | temp | wind | precip
+    number_format: str | None = None
 
 
 MAIN_RULES: list[ColorRule] = [
     ColorRule("Total", "high_good", "0.0"),
     ColorRule("Spread", "low_good", "+0.0;-0.0;0"),
     ColorRule("ITT", "high_good", "0.0"),
-    ColorRule("Temp °F", "diverging", "0"),
-    ColorRule("Precip %", "low_good", "0"),
-    ColorRule("Wind mph", "low_good", "0"),
+    ColorRule("Temp °F", "temp", "0"),
+    ColorRule("Precip %", "precip", "0"),
+    ColorRule("Wind mph", "wind", "0"),
     ColorRule("Pace (plays/min)", "high_good", "0.00"),
     ColorRule("Pace Rk", "low_good", "0"),
     ColorRule("Off EPA/DB", "high_good", "0.00"),
     ColorRule("Off EPA/Rush", "high_good", "0.00"),
-    ColorRule("RROE%", "diverging", "+0.0;-0.0;0"),
+    # RROE: per request, pass-heavy (low RROE%, high rank number) is green.
+    ColorRule("RROE%", "low_good", "+0.0;-0.0;0"),
     ColorRule("Def EPA/DB", "low_good", "0.00"),
     ColorRule("Def EPA/Rush", "low_good", "0.00"),
     ColorRule("Pace L3", "high_good", "0.00"),
@@ -39,7 +55,8 @@ MAIN_RULES: list[ColorRule] = [
     ColorRule("Def EPA/DB L3", "low_good", "0.00"),
     ColorRule("Def EPA/Rush L3", "low_good", "0.00"),
 ]
-RANK_HEADER = "Rk"  # every "Rk" column: 1 = green
+RANK_HEADER = "Rk"
+FLIPPED_RANK_AFTER = {"RROE%"}  # a "Rk" right after these headers: high number = green
 
 
 def _grid(sheet_id: int, col: int, first_row: int, last_row: int) -> dict[str, Any]:
@@ -52,24 +69,39 @@ def _grid(sheet_id: int, col: int, first_row: int, last_row: int) -> dict[str, A
     }
 
 
-def _gradient(kind: str) -> dict[str, Any]:
-    if kind == "high_good":
-        return {
-            "minpoint": {"color": RED, "type": "MIN"},
-            "midpoint": {"color": WHITE, "type": "PERCENTILE", "value": "50"},
-            "maxpoint": {"color": GREEN, "type": "MAX"},
-        }
-    if kind == "low_good":
-        return {
-            "minpoint": {"color": GREEN, "type": "MIN"},
-            "midpoint": {"color": WHITE, "type": "PERCENTILE", "value": "50"},
-            "maxpoint": {"color": RED, "type": "MAX"},
-        }
+def _pct(lo: dict, mid: dict, hi: dict) -> dict[str, Any]:
     return {
-        "minpoint": {"color": ORANGE, "type": "MIN"},
-        "midpoint": {"color": WHITE, "type": "PERCENTILE", "value": "50"},
-        "maxpoint": {"color": BLUE, "type": "MAX"},
+        "minpoint": {"color": lo, "type": "PERCENTILE", "value": P_LOW},
+        "midpoint": {"color": mid, "type": "PERCENTILE", "value": P_MID},
+        "maxpoint": {"color": hi, "type": "PERCENTILE", "value": P_HIGH},
     }
+
+
+def _num(lo: tuple[dict, float], mid: tuple[dict, float], hi: tuple[dict, float]) -> dict[str, Any]:
+    return {
+        "minpoint": {"color": lo[0], "type": "NUMBER", "value": str(lo[1])},
+        "midpoint": {"color": mid[0], "type": "NUMBER", "value": str(mid[1])},
+        "maxpoint": {"color": hi[0], "type": "NUMBER", "value": str(hi[1])},
+    }
+
+
+def gradient(kind: str) -> dict[str, Any]:
+    if kind == "high_good":
+        return _pct(RED, WHITE, GREEN)
+    if kind == "low_good":
+        return _pct(GREEN, WHITE, RED)
+    if kind == "temp":
+        return _num((BLUE, 35), (WHITE, 68), (RED, 95))
+    if kind == "wind":
+        return _num((WHITE, 12), (ORANGE, 15), (RED, 20))
+    if kind == "precip":
+        return _num((WHITE, 20), (ORANGE, 50), (RED, 80))
+    raise ValueError(kind)
+
+
+def _rank_kind(header: list[str], col: int) -> str:
+    prev = header[col - 1] if col > 0 else ""
+    return "high_good" if prev in FLIPPED_RANK_AFTER else "low_good"
 
 
 def conditional_format_requests(
@@ -86,34 +118,27 @@ def conditional_format_requests(
     ]
     first_row = header_row + 1
     by_header = {h: i for i, h in enumerate(header)}
-    for rule in MAIN_RULES:
-        col = by_header.get(rule.header)
-        if col is None:
-            continue
+
+    def add(col: int, kind: str) -> None:
         reqs.append(
             {
                 "addConditionalFormatRule": {
                     "rule": {
                         "ranges": [_grid(sheet_id, col, first_row, last_row)],
-                        "gradientRule": _gradient(rule.kind),
+                        "gradientRule": gradient(kind),
                     },
                     "index": 0,
                 }
             }
         )
+
+    for rule in MAIN_RULES:
+        col = by_header.get(rule.header)
+        if col is not None:
+            add(col, rule.kind)
     for col, h in enumerate(header):
         if h == RANK_HEADER:
-            reqs.append(
-                {
-                    "addConditionalFormatRule": {
-                        "rule": {
-                            "ranges": [_grid(sheet_id, col, first_row, last_row)],
-                            "gradientRule": _gradient("low_good"),
-                        },
-                        "index": 0,
-                    }
-                }
-            )
+            add(col, _rank_kind(header, col))
     return reqs
 
 

@@ -340,3 +340,27 @@ than play-to-play clock deltas; see `transform/pace.py` for the exact rule.
 Validation on the dev sheet: our offense EPA/dropback, EPA/rush and defense
 EPA/dropback correlate 0.95 / 0.94 / 0.95 with CFBD's own `/ppa/teams` season
 aggregates (garbage time excluded) across all 138 FBS teams.
+
+## Addendum 2026-09-09 (Phase 6): player tabs use CFBD /passing/plays, /rushing/plays, /roster
+
+Verified live for 2026 week 1: `/passing/plays` (4,486 attempts, 99 FBS-involved
+games, `passerId`/`targetId`/`airYards`/`outcome`/`isSpike`/`isThrowaway`/`ppa`;
+91.5% of attempts carry a target — the rest are throwaways or unparsed) and
+`/rushing/plays` (5,596 rushes with `rusherId`, `isSack`, `isKneel`,
+`attributionStatus`; 93% individually attributed). `/roster?year=2026` returns
+every D-I roster (30,639 players) and 100% of target ids matched it. Given the
+ESPN parquet's incompleteness (Phase 4 addendum) these are the player sources.
+Cost: 2 calls per week of season plus one roster call per week.
+
+PFF-only columns (grades, routes, YPRR, slot %, TTT, BTT%, TWP%) are not
+available anywhere free and are omitted. Replacements provided: target share,
+aDOT, air yards, YAC, red-zone targets, PPA per target/attempt/carry, success
+rate, dropbacks, sacks, designed runs.
+
+Wind thresholds for the main-tab formatting (white ≤ 12 mph, orange 15, red
+20+) follow published NFL analyses: completion percentage falls from ~60% under
+10 mph to ~55% at 20+ mph, with the decline becoming measurable past 15 mph
+and roughly doubling past 20 mph (Advanced Football Analytics, "Weather Effects
+on Passing", 2012; PFF "The Factors: Wind's influence on completion
+percentage", 2017; Claremont McKenna thesis "Quantifying the Impact of
+Temperature and Wind on NFL..."; Wharton Sports Analytics 2022 weather paper).

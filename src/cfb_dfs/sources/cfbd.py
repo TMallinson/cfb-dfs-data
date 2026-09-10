@@ -156,6 +156,26 @@ class CfbdClient:
         """All venues with coordinates and dome flag. Cached 30 days under season 'static'."""
         return list(self._cached("static", "cfbd", 24 * 30, "/venues", {}))
 
+    def passing_plays(
+        self, year: int, week: int, season_type: str = "regular", completed: bool = True
+    ) -> list[dict[str, Any]]:
+        """Enriched pass attempts (passer, target, air yards, outcome) for one week."""
+        ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
+        params = {"year": year, "week": week, "seasonType": season_type}
+        return list(self._cached(year, "cfbd", ttl, "/passing/plays", params))
+
+    def rushing_plays(
+        self, year: int, week: int, season_type: str = "regular", completed: bool = True
+    ) -> list[dict[str, Any]]:
+        """Enriched rushes (rusher attribution, sacks, kneels) for one week."""
+        ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
+        params = {"year": year, "week": week, "seasonType": season_type}
+        return list(self._cached(year, "cfbd", ttl, "/rushing/plays", params))
+
+    def roster(self, year: int) -> list[dict[str, Any]]:
+        """Every roster in every division (~9 MB); cached a week."""
+        return list(self._cached(year, "cfbd", self.ttl.teams, "/roster", {"year": year}))
+
     def ppa_teams(self, year: int, exclude_garbage_time: bool = True) -> list[dict[str, Any]]:
         params = {"year": year, "excludeGarbageTime": str(exclude_garbage_time).lower()}
         data = self._cached(year, "cfbd", self.ttl.ppa, "/ppa/teams", params)

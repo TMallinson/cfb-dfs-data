@@ -33,7 +33,7 @@ from cfb_dfs.transform.vegas import TeamLine, all_team_lines
 log = get_logger(__name__)
 
 ALL_STAGES = ["slates", "vegas", "weather", "pace", "epa", "rroe", "players"]
-IMPLEMENTED = {"slates", "vegas", "weather", "pace", "epa", "rroe"}
+IMPLEMENTED = {"slates", "vegas", "weather", "pace", "epa", "rroe", "players"}
 OVERRIDES_PATH = "data/overrides/team_aliases.yaml"
 MAIN_NCOLS = 34
 RROE_REPORT_PATH = "reports/rroe_model_report.md"
@@ -89,6 +89,8 @@ class Context:
     weather: dict[int, Any] = field(default_factory=dict)
     rroe: pl.DataFrame | None = None
     rroe_report: Any = None
+    players: dict[str, pl.DataFrame] = field(default_factory=dict)
+    roster: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     @property
     def fbs_ids(self) -> set[int]:
@@ -422,6 +424,120 @@ def stage_rroe(ctx: Context) -> None:
         raise SourceError("RROE model is no better than the constant baseline; refusing to rank")
 
 
+def stage_players(ctx: Context) -> None:
+    from cfb_dfs.transform.players import (
+        passer_games,
+        passing_frame,
+        roster_index,
+        rusher_games,
+        rushing_frame,
+        season_table,
+        target_games,
+        team_game_counts,
+    )
+
+    s = ctx.settings
+    if ctx.cfbd is None:
+        raise SourceError("CFBD client disabled; player plays unavailable")
+    assert ctx.teams is not None
+    if not ctx.season_games:
+        ctx.season_games = load_season_games(ctx)
+    now = s.now()
+    weeks = sorted({g.week for g in ctx.season_games if g.start_date < now} | {ctx.week})
+    p_rows: list[dict[str, Any]] = []
+    r_rows: list[dict[str, Any]] = []
+    for wk in weeks:
+        completed = wk < ctx.week
+        p_rows += ctx.cfbd.passing_plays(s.season, wk, s.season_type, completed=completed)
+        r_rows += ctx.cfbd.rushing_plays(s.season, wk, s.season_type, completed=completed)
+    if not p_rows and not r_rows:
+        raise SourceError("CFBD passing/rushing plays returned nothing")
+    ctx.roster = roster_index(ctx.cfbd.roster(s.season))
+    passing = passing_frame(p_rows, ctx.teams)
+    rushing = rushing_frame(r_rows, ctx.teams)
+    tg, pg, rg = (
+        target_games(passing),
+        passer_games(passing, rushing),
+        rusher_games(rushing, passing),
+    )
+    team_games = team_game_counts([passing, rushing])
+    order = ctx.game_order()
+    win = s.metrics.recent_games_window
+    team_att = {
+        int(r["team_id"]): int(r["n"])
+        for r in passing.group_by("team_id").agg(pl.len().alias("n")).to_dicts()
+    }
+    ctx.players["team_attempts"] = pl.DataFrame(
+        {"team_id": list(team_att.keys()), "team_attempts": list(team_att.values())},
+        schema={"team_id": pl.Int64, "team_attempts": pl.Int64},
+    )
+    ctx.players["targets"] = season_table(
+        tg,
+        "targets",
+        [
+            "targets",
+            "receptions",
+            "rec_yards",
+            "rec_td",
+            "air_yards",
+            "air_yards_n",
+            "yac",
+            "ppa",
+            "rz_targets",
+        ],
+        order,
+        team_games,
+        win,
+    )
+    ctx.players["passing"] = season_table(
+        pg,
+        "attempts",
+        [
+            "attempts",
+            "completions",
+            "pass_yards",
+            "pass_td",
+            "ints",
+            "air_yards",
+            "air_yards_n",
+            "ppa",
+            "sacks",
+            "dropbacks",
+            "rush_att",
+            "rush_yards",
+        ],
+        order,
+        team_games,
+        win,
+    )
+    ctx.players["rushing"] = season_table(
+        rg,
+        "carries",
+        [
+            "carries",
+            "rush_yards",
+            "rush_td",
+            "successes",
+            "ppa",
+            "targets",
+            "receptions",
+            "rec_yards",
+        ],
+        order,
+        team_games,
+        win,
+    )
+    ctx.result.sources_used.append(
+        f"cfbd:/passing/plays+/rushing/plays+/roster({passing['game_id'].n_unique()} games)"
+    )
+    log.info(
+        "stage.players",
+        receivers=ctx.players["targets"].height,
+        passers=ctx.players["passing"].height,
+        rushers=ctx.players["rushing"].height,
+    )
+
+
 STAGE_FUNCS = {
     "slates": stage_slates,
     "vegas": stage_vegas,
@@ -429,6 +545,7 @@ STAGE_FUNCS = {
     "pace": stage_pace,
     "epa": stage_epa,
     "rroe": stage_rroe,
+    "players": stage_players,
 }
 
 
@@ -495,6 +612,41 @@ def reload_previous(
         if df is not None:
             setattr(ctx, stage, df)
             log.info("pipeline.reused_previous", stage=stage, teams=df.height)
+    if "vegas" not in wanted:
+        spec = specs["vegas_raw"]
+        vidx = {h: i for i, h in enumerate(spec.header)}
+        for r in writer.read_table(spec):
+            try:
+                if (
+                    int(r[vidx["Week"]]) != ctx.week
+                    or int(r[vidx["Season"]]) != ctx.settings.season
+                ):
+                    continue
+                gid, tid, oid = (
+                    int(r[vidx["Game id"]]),
+                    int(r[vidx["Team id"]]),
+                    int(r[vidx["Opp id"]]),
+                )
+            except (TypeError, ValueError, IndexError):
+                continue
+            tl = TeamLine(
+                gid,
+                tid,
+                oid,
+                _cell(r, vidx, "H/A") == "H",
+                _cell(r, vidx, "Book"),
+                _cell(r, vidx, "Total"),
+                _cell(r, vidx, "Spread"),
+                _cell(r, vidx, "ITT"),
+                _cell(r, vidx, "Spread open"),
+                _cell(r, vidx, "Total open"),
+                _cell(r, vidx, "Moneyline"),
+                str(_cell(r, vidx, "Books available") or ""),
+            )
+            ctx.lines.setdefault(gid, []).append(tl)
+        if ctx.lines:
+            ctx.line_source = "previous run (Vegas Raw)"
+            log.info("pipeline.reused_previous", stage="vegas", games=len(ctx.lines))
     if "weather" not in wanted:
         spec = specs["weather_raw"]
         header = list(spec.header)
@@ -714,6 +866,148 @@ def build_rroe_table(ctx: Context, spec: TabSpec) -> TableWrite:
         f"· see reports/rroe_model_report.md · updated {ctx.settings.now():%Y-%m-%d %H:%M %Z}"
     )
     return TableWrite(spec, rows, title=title)
+
+
+def _weeks(r: dict[str, Any]) -> list[Cell]:
+    return [r.get(f"wk{w}") for w in range(1, 17)]
+
+
+def _player_ident(ctx: Context, r: dict[str, Any]) -> list[Cell]:
+    assert ctx.teams is not None
+    ro = ctx.roster.get(str(r["player_id"]), {})
+    tid = int(r["team_id"])
+    return [
+        r["player_id"],
+        ctx.teams.abbr(tid),
+        ro.get("name") or r.get("name"),
+        ro.get("position"),
+    ]
+
+
+def _r(num: Any, den: Any, digits: int = 2) -> Cell:
+    if num is None or not den:
+        return None
+    return round(num / den, digits)
+
+
+def build_targets_table(ctx: Context, spec: TabSpec) -> TableWrite:
+    df = ctx.players["targets"].join(ctx.players["team_attempts"], on="team_id", how="left")
+    rows: list[list[Cell]] = []
+    for r in df.to_dicts():
+        rows.append(
+            [
+                *_player_ident(ctx, r),
+                r.get("team_games"),
+                r["games"],
+                r["targets"],
+                _r(r["targets"], r["games"]),
+                r["targets_l3"],
+                _r(r["targets_l3"], r["games_l3"]),
+                _r(100 * r["targets"], r.get("team_attempts"), 1),
+                r["receptions"],
+                r["rec_yards"],
+                r["rec_td"],
+                _r(r["air_yards"], r["air_yards_n"], 1),
+                r["air_yards"],
+                r["yac"],
+                r["rz_targets"],
+                _r(r["ppa"], r["targets"], 3),
+                *_weeks(r),
+            ]
+        )
+    return TableWrite(
+        spec,
+        rows,
+        title=_players_title(
+            ctx,
+            "Targets = pass attempts with a "
+            "named receiver (throwaways/spikes excluded); Tgt share = targets / team pass "
+            "attempts; RZ = target inside the 20",
+        ),
+    )
+
+
+def build_passing_table(ctx: Context, spec: TabSpec) -> TableWrite:
+    rows: list[list[Cell]] = []
+    for r in ctx.players["passing"].to_dicts():
+        rows.append(
+            [
+                *_player_ident(ctx, r),
+                r.get("team_games"),
+                r["games"],
+                r["dropbacks"],
+                r["attempts"],
+                _r(r["attempts"], r["games"]),
+                r["attempts_l3"],
+                _r(r["attempts_l3"], r["games_l3"]),
+                r["completions"],
+                _r(100 * r["completions"], r["attempts"], 1),
+                r["pass_yards"],
+                _r(r["pass_yards"], r["attempts"]),
+                _r(r["air_yards"], r["air_yards_n"], 1),
+                r["pass_td"],
+                r["ints"],
+                r["sacks"],
+                _r(r["ppa"], r["attempts"], 3),
+                r["rush_att"],
+                r["rush_yards"],
+                *_weeks(r),
+            ]
+        )
+    return TableWrite(
+        spec,
+        rows,
+        title=_players_title(
+            ctx,
+            "Attempts exclude spikes; dropbacks = "
+            "attempts + sacks taken; designed runs = individually attributed rushes by "
+            "the passer (scrambles cannot be separated)",
+        ),
+    )
+
+
+def build_rushing_table(ctx: Context, spec: TabSpec) -> TableWrite:
+    rows: list[list[Cell]] = []
+    for r in ctx.players["rushing"].to_dicts():
+        rows.append(
+            [
+                *_player_ident(ctx, r),
+                r.get("team_games"),
+                r["games"],
+                r["carries"],
+                _r(r["carries"], r["games"]),
+                r["carries_l3"],
+                _r(r["carries_l3"], r["games_l3"]),
+                r["rush_yards"],
+                _r(r["rush_yards"], r["carries"]),
+                r["rush_td"],
+                _r(100 * r["successes"], r["carries"], 1),
+                _r(r["ppa"], r["carries"], 3),
+                r["targets"],
+                r["receptions"],
+                r["rec_yards"],
+                r["carries"] + r["receptions"],
+                *_weeks(r),
+            ]
+        )
+    return TableWrite(
+        spec,
+        rows,
+        title=_players_title(
+            ctx,
+            "Carries = individually attributed "
+            "rushes only (no sacks, kneels, team rushes); success = CFBD success flag",
+        ),
+    )
+
+
+def _players_title(ctx: Context, definition: str) -> str:
+    return (
+        f"Season {ctx.settings.season} through week {ctx.week - 1} · source CFBD /passing/plays, "
+        f"/rushing/plays, /roster · {definition} · L3 = last "
+        f"{ctx.settings.metrics.recent_games_window} team games · updated "
+        f"{ctx.settings.now():%Y-%m-%d %H:%M %Z}"
+    )
 
 
 def _mins(secs: Any) -> Cell:
@@ -969,6 +1263,10 @@ def run_pipeline(
         tables.append(build_weather_table(ctx, specs["weather_raw"]))
     if "rroe" in result.stages_ok:
         tables.append(build_rroe_table(ctx, specs["rroe_raw"]))
+    if "players" in result.stages_ok:
+        tables.append(build_targets_table(ctx, specs["targets_raw"]))
+        tables.append(build_passing_table(ctx, specs["passing_raw"]))
+        tables.append(build_rushing_table(ctx, specs["rushing_raw"]))
     if "vegas" in wanted and "vegas" not in result.stages_ok:
         # Lines failed: keep the previous main tab rather than blanking it.
         result.warn("main tab left unchanged because the vegas stage failed")
@@ -999,6 +1297,21 @@ def _finish(
             tables.append(TableWrite(specs["log"], []))
     report = writer.write_tables(tables, dry_run=dry_run)
     r.rows_written = report.rows_written
+    if not dry_run and "players" in r.stages_ok:
+        for disp, raw, sort_col in (
+            ("targets", "targets_raw", "Targets"),
+            ("passing", "passing_raw", "Attempts"),
+            ("rushing", "rushing_raw", "Carries"),
+        ):
+            try:
+                default = (
+                    ctx.teams.abbr(ctx.slates[0].game.home_id) if ctx.slates and ctx.teams else None
+                )
+                writer.setup_display_tab(
+                    specs[disp], specs[raw], sort_col, specs["teams"].name, default
+                )
+            except Exception as exc:
+                r.warn(f"display tab {specs[disp].name} setup failed: {exc}")
     if not dry_run and any(t.spec.name == specs["main"].name for t in tables):
         try:
             writer.format_main(specs["main"])
