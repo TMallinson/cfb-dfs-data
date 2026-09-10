@@ -12,7 +12,7 @@ def test_repo_config_loads():
     assert s.season == 2026
     assert s.timezone == "America/Chicago"
     assert s.metrics.garbage_time.q4 == 14
-    assert s.sheet.tabs.main == "DK "
+    assert s.sheet.tabs.main == "Main"
 
 
 def test_secrets_never_in_repr(monkeypatch, tmp_path: Path):

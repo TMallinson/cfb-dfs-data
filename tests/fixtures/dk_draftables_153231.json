@@ -1,0 +1,725 @@
+{
+ "competitions": [
+  {
+   "competitionId": 6182076,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3421,
+    "teamName": "Owls",
+    "abbreviation": "TEMP",
+    "city": "Temple",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3440,
+    "teamName": "Nittany Lions",
+    "abbreviation": "PSU",
+    "city": "Penn State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "PSU @ TEMP",
+   "venue": "Lincoln Financial Field",
+   "weather": {
+    "icon": "partly-cloudy-day",
+    "isDome": false
+   },
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ESP2"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182187,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3435,
+    "teamName": "Wolverines",
+    "abbreviation": "MICH",
+    "city": "Michigan",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3430,
+    "teamName": "Sooners",
+    "abbreviation": "OU",
+    "city": "Oklahoma",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "OU @ MICH",
+   "venue": "Michigan Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "FOX"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182191,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3489,
+    "teamName": "Aggies",
+    "abbreviation": "TA&M",
+    "city": "Texas A&M",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3463,
+    "teamName": "Sun Devils",
+    "abbreviation": "ASU",
+    "city": "Arizona State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "ASU @ TA&M",
+   "venue": "Kyle Field",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ABC"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182296,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3427,
+    "teamName": "Wildcats",
+    "abbreviation": "KSU",
+    "city": "Kansas State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3471,
+    "teamName": "Cougars",
+    "abbreviation": "WSU",
+    "city": "Washington State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "WSU @ KSU",
+   "venue": "Bill Snyder Family Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "TNT/HBO Max"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182299,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3431,
+    "teamName": "Cowboys",
+    "abbreviation": "OKST",
+    "city": "Oklahoma State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3465,
+    "teamName": "Ducks",
+    "abbreviation": "ORE",
+    "city": "Oregon",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "ORE @ OKST",
+   "venue": "Boone Pickens Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ESPN"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182409,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3441,
+    "teamName": "Boilermakers",
+    "abbreviation": "PUR",
+    "city": "Purdue",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3415,
+    "teamName": "Demon Deacons",
+    "abbreviation": "WAKE",
+    "city": "Wake Forest",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T16:00:00.0000000Z",
+   "name": "WAKE @ PUR",
+   "venue": "Ross-Ade Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "FS1"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182183,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3474,
+    "teamName": "Wildcats",
+    "abbreviation": "UK",
+    "city": "Kentucky",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3478,
+    "teamName": "Crimson Tide",
+    "abbreviation": "BAMA",
+    "city": "Alabama",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "BAMA @ UK",
+   "venue": "Commonwealth Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ABC"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182185,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3437,
+    "teamName": "Golden Gophers",
+    "abbreviation": "MINN",
+    "city": "Minnesota",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3483,
+    "teamName": "Bulldogs",
+    "abbreviation": "MSST",
+    "city": "Mississippi State",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "MSST @ MINN",
+   "venue": "TCF Bank Stadium",
+   "weather": {
+    "icon": "partly-cloudy-day",
+    "isDome": false
+   },
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "CBS"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182298,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3493,
+    "teamName": "Cougars",
+    "abbreviation": "BYU",
+    "city": "BYU",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3462,
+    "teamName": "Wildcats",
+    "abbreviation": "ARIZ",
+    "city": "Arizona",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "ARIZ @ BYU",
+   "venue": "LaVell Edwards Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "FOX"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182301,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3418,
+    "teamName": "Panthers",
+    "abbreviation": "PITT",
+    "city": "Pittsburgh",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3615,
+    "teamName": "Knights",
+    "abbreviation": "UCF",
+    "city": "UCF",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "UCF @ PITT",
+   "venue": "Heinz Field",
+   "weather": {
+    "icon": "rain",
+    "isDome": false
+   },
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ESP2"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182407,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3420,
+    "teamName": "Orange",
+    "abbreviation": "SYR",
+    "city": "Syracuse",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3464,
+    "teamName": "Golden Bears",
+    "abbreviation": "CAL",
+    "city": "California",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "CAL @ SYR",
+   "venue": "Carrier Dome",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "ACCN"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  },
+  {
+   "competitionId": 6182408,
+   "sport": "CFB",
+   "sportId": 5,
+   "homeTeam": {
+    "teamId": 3432,
+    "teamName": "Fighting Illini",
+    "abbreviation": "IL",
+    "city": "Illinois",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "awayTeam": {
+    "teamId": 3408,
+    "teamName": "Blue Devils",
+    "abbreviation": "DUKE",
+    "city": "Duke",
+    "teamImageUrl": "",
+    "darkModeImageUrl": ""
+   },
+   "startTime": "2026-09-12T19:30:00.0000000Z",
+   "name": "DUKE @ IL",
+   "venue": "Memorial Stadium",
+   "startingLineupsAvailable": false,
+   "depthChartsAvailable": true,
+   "competitionState": "Upcoming",
+   "competitionStateDetail": "",
+   "competitionStartedEarly": false,
+   "competitionAttributes": [
+    {
+     "typeId": 2,
+     "value": "1"
+    },
+    {
+     "typeId": 9,
+     "value": "Pre-Game"
+    },
+    {
+     "typeId": 22,
+     "value": "2"
+    },
+    {
+     "typeId": 23,
+     "value": "2"
+    },
+    {
+     "typeId": 27,
+     "value": "False"
+    },
+    {
+     "typeId": 32,
+     "value": "FS1"
+    },
+    {
+     "typeId": 83,
+     "value": "0"
+    }
+   ]
+  }
+ ],
+ "draftables": []
+}

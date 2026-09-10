@@ -124,6 +124,43 @@ def inspect_sheet(
     typer.echo(f"wrote {out} ({client.reads} read requests)")
 
 
+@app.command("reset-sheet")
+def reset_sheet(
+    config: ConfigOpt = Path("config.yaml"),
+    sheet_id: Annotated[str | None, typer.Option("--sheet-id")] = None,
+    yes: Annotated[bool, typer.Option("--yes", help="actually delete; otherwise dry-run")] = False,
+) -> None:
+    """One-time: create the pipeline's tabs, then DELETE every other tab in the sheet."""
+    from cfb_dfs.sheets.auth import load_credentials
+    from cfb_dfs.sheets.client import SheetsClient
+    from cfb_dfs.sheets.layout import build_specs
+    from cfb_dfs.sheets.writer import SheetWriter, TableWrite
+
+    settings, secrets = _bootstrap(config)
+    sid = sheet_id or secrets.sheet_id
+    if not sid:
+        raise typer.BadParameter("SHEET_ID is not set and --sheet-id not given")
+    writer = SheetWriter(SheetsClient(load_credentials(secrets), sid))
+    specs = build_specs(settings.sheet.tabs)
+    keep = {s.name for s in specs.values()}
+    doomed = [t for t in writer.sheet_ids() if t not in keep]
+    typer.echo(f"keep: {sorted(keep)}")
+    typer.echo(f"delete ({len(doomed)}): {doomed}")
+    if not yes:
+        typer.echo("dry run; pass --yes to apply")
+        return
+    created = writer.ensure_tabs(list(specs.values()))
+    writer.apply_properties(list(specs.values()))
+    tables = [
+        TableWrite(specs[k], [], title=("Config" if k == "config" else None))
+        for k in specs
+        if specs[k].name in created
+    ]
+    writer.write_tables(tables)
+    deleted = writer.delete_tabs(doomed)
+    typer.echo(f"created {created}; deleted {len(deleted)} tab(s)")
+
+
 @app.command()
 def run(
     config: ConfigOpt = Path("config.yaml"),

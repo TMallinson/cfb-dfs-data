@@ -60,7 +60,7 @@ metrics:
 
 sheet:
   tabs:
-    main: "DK "
+    main: "Main"
     pff: "PFF Ratings"
     vegas_raw: "Vegas Raw"
     pace_raw: "Pace Raw"

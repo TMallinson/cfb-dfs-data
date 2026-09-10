@@ -1,0 +1,19 @@
+# Manual team-name overrides, applied after automatic matching.
+# Keys are normalized DraftKings names ("<city> <nickname>" lower-cased, punctuation
+# stripped) or DK abbreviations; values are CFBD `school` names.
+#
+# Add a line here whenever the run log reports `teams.unmatched_dk_team`.
+dk_names: {}
+dk_abbreviations:
+  RU: Rutgers
+  BAMA: Alabama
+  MIZZ: Missouri
+  IL: Illinois
+  TEMP: Temple
+  ULL: Louisiana
+  NMST: New Mexico State
+  TA&M: Texas A&M
+
+# Preferred display abbreviation per CFBD school when DK has not listed the team
+# this week (defaults to the CFBD abbreviation).
+display_abbreviations: {}

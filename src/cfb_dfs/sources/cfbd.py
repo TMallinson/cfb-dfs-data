@@ -91,6 +91,11 @@ class CfbdClient:
         data = self._cached(year, "cfbd", self.ttl.calendar, "/calendar", {"year": year})
         return [CalendarWeek.model_validate(row) for row in data]
 
+    def teams(self, year: int) -> list[Team]:
+        """Every team in every division for the season (FBS + FCS opponents needed)."""
+        data = self._cached(year, "cfbd", self.ttl.teams, "/teams", {"year": year})
+        return [Team.model_validate(row) for row in data]
+
     def teams_fbs(self, year: int) -> list[Team]:
         data = self._cached(year, "cfbd", self.ttl.teams, "/teams/fbs", {"year": year})
         return [Team.model_validate(row) for row in data]

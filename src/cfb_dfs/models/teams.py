@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Team(BaseModel):
@@ -18,3 +18,8 @@ class Team(BaseModel):
     classification: str | None = None
     color: str | None = None
     logos: list[str] = Field(default_factory=list)
+
+    @field_validator("alternate_names", "logos", mode="before")
+    @classmethod
+    def _none_to_list(cls, v: object) -> object:
+        return [] if v is None else v

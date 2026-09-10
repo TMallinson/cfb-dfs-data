@@ -1,0 +1,145 @@
+{
+ "DraftGroups": [
+  {
+   "DraftGroupId": 153231,
+   "ContestTypeId": 94,
+   "StartDate": "2026-09-12T16:00:00.0000000Z",
+   "StartDateEst": "2026-09-12T12:00:00.0000000",
+   "SortOrder": 999,
+   "DraftGroupTag": "Featured",
+   "GameTypeId": 94,
+   "GameType": null,
+   "SportSortOrder": 14,
+   "Sport": "CFB",
+   "SportId": 5,
+   "GameCount": 12,
+   "ContestStartTimeSuffix": "",
+   "ContestStartTimeType": 0,
+   "Games": null,
+   "DraftGroupSeriesId": 0,
+   "GameSetKey": "0ED834F061CE37858D3F5E881B660D22",
+   "AllowUGC": true
+  },
+  {
+   "DraftGroupId": 153292,
+   "ContestTypeId": 95,
+   "StartDate": "2026-09-11T00:00:00.0000000Z",
+   "StartDateEst": "2026-09-10T20:00:00.0000000",
+   "SortOrder": 999,
+   "DraftGroupTag": "Featured",
+   "GameTypeId": 95,
+   "GameType": null,
+   "SportSortOrder": 14,
+   "Sport": "CFB",
+   "SportId": 5,
+   "GameCount": 1,
+   "ContestStartTimeSuffix": " (FAMU @ MIA)",
+   "ContestStartTimeType": 0,
+   "Games": null,
+   "DraftGroupSeriesId": 0,
+   "GameSetKey": "4854AFB38D057BBED2A54D433B93408D",
+   "AllowUGC": true
+  },
+  {
+   "DraftGroupId": 153296,
+   "ContestTypeId": 377,
+   "StartDate": "2026-09-11T23:30:00.0000000Z",
+   "StartDateEst": "2026-09-11T19:30:00.0000000",
+   "SortOrder": 999,
+   "DraftGroupTag": "Featured",
+   "GameTypeId": 377,
+   "GameType": null,
+   "SportSortOrder": 14,
+   "Sport": "CFB",
+   "SportId": 5,
+   "GameCount": 2,
+   "ContestStartTimeSuffix": null,
+   "ContestStartTimeType": 0,
+   "Games": null,
+   "DraftGroupSeriesId": 0,
+   "GameSetKey": "8D834FF9EB02292CE0C8CE1E31A460C1",
+   "AllowUGC": false
+  },
+  {
+   "DraftGroupId": 153299,
+   "ContestTypeId": 94,
+   "StartDate": "2026-09-12T19:30:00.0000000Z",
+   "StartDateEst": "2026-09-12T15:30:00.0000000",
+   "SortOrder": 999,
+   "DraftGroupTag": "",
+   "GameTypeId": 94,
+   "GameType": null,
+   "SportSortOrder": 14,
+   "Sport": "CFB",
+   "SportId": 5,
+   "GameCount": 6,
+   "ContestStartTimeSuffix": " (Afternoon)",
+   "ContestStartTimeType": 0,
+   "Games": null,
+   "DraftGroupSeriesId": 120,
+   "GameSetKey": "E9382A19BB399E3803CE0F242D35E0F0",
+   "AllowUGC": true
+  }
+ ],
+ "GameTypes": [
+  {
+   "GameTypeId": 94,
+   "Name": "Classic",
+   "Description": "Create an 8-player lineup while staying under the $50,000 salary cap",
+   "Tag": "",
+   "SportId": 5,
+   "DraftType": "SalaryCap",
+   "GameStyle": {
+    "GameStyleId": 46,
+    "SportId": 5,
+    "SortOrder": 2,
+    "Name": "Classic",
+    "Abbreviation": "CLA",
+    "Description": "Create an 8-player lineup while staying under the $50,000 salary cap",
+    "IsEnabled": true,
+    "Attributes": null
+   },
+   "IsSeasonLong": false
+  },
+  {
+   "GameTypeId": 95,
+   "Name": "Showdown Captain Mode",
+   "Description": "Create your team from 1 game, while staying under the $50,000 salary cap",
+   "Tag": "",
+   "SportId": 5,
+   "DraftType": "SalaryCap",
+   "GameStyle": {
+    "GameStyleId": 47,
+    "SportId": 5,
+    "SortOrder": 3,
+    "Name": "Showdown Captain Mode",
+    "Abbreviation": "SHW",
+    "Description": "Create your team from 1 game, while staying under the $50,000 salary cap",
+    "IsEnabled": true,
+    "Attributes": [
+     "showdown"
+    ]
+   },
+   "IsSeasonLong": false
+  },
+  {
+   "GameTypeId": 377,
+   "Name": "Snake",
+   "Description": "Snake draft a 7-player lineup. 6 starters and 1 bench.",
+   "Tag": "New",
+   "SportId": 5,
+   "DraftType": "SnakeDraft",
+   "GameStyle": {
+    "GameStyleId": 199,
+    "SportId": 5,
+    "SortOrder": 4,
+    "Name": "Snake",
+    "Abbreviation": "SNK",
+    "Description": "Snake draft a 7-player lineup. 6 starters and 1 bench.",
+    "IsEnabled": true,
+    "Attributes": null
+   },
+   "IsSeasonLong": false
+  }
+ ]
+}

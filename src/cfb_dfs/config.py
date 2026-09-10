@@ -89,7 +89,7 @@ class MetricsConfig(BaseModel):
 
 
 class TabNames(BaseModel):
-    main: str = "DK "
+    main: str = "Main"
     pff: str = "PFF Ratings"
     vegas_raw: str = "Vegas Raw"
     pace_raw: str = "Pace Raw"
