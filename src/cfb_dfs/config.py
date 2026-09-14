@@ -125,6 +125,8 @@ class TabNames(BaseModel):
 class SheetConfig(BaseModel):
     tabs: TabNames = TabNames()
     protected_editor_emails: list[str] = []
+    keep_tabs: list[str] = []  # user-owned tabs reset-sheet must never delete
+    after_main_tabs: list[str] = []  # user-owned tabs ordered between Main and the player tabs
 
 
 class SeasonWindow(BaseModel):

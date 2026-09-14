@@ -130,7 +130,8 @@ def reset_sheet(
     sheet_id: Annotated[str | None, typer.Option("--sheet-id")] = None,
     yes: Annotated[bool, typer.Option("--yes", help="actually delete; otherwise dry-run")] = False,
 ) -> None:
-    """One-time: create the pipeline's tabs, then DELETE every other tab in the sheet."""
+    """One-time: create the pipeline's tabs, then DELETE every other tab in the sheet
+    except those listed under sheet.keep_tabs / sheet.after_main_tabs in config.yaml."""
     from cfb_dfs.sheets.auth import load_credentials
     from cfb_dfs.sheets.client import SheetsClient
     from cfb_dfs.sheets.layout import build_specs
@@ -142,7 +143,8 @@ def reset_sheet(
         raise typer.BadParameter("SHEET_ID is not set and --sheet-id not given")
     writer = SheetWriter(SheetsClient(load_credentials(secrets), sid))
     specs = build_specs(settings.sheet.tabs)
-    keep = {s.name for s in specs.values()}
+    keep = {s.name for s in specs.values()} | set(settings.sheet.keep_tabs)
+    keep |= set(settings.sheet.after_main_tabs)
     doomed = [t for t in writer.sheet_ids() if t not in keep]
     typer.echo(f"keep: {sorted(keep)}")
     typer.echo(f"delete ({len(doomed)}): {doomed}")

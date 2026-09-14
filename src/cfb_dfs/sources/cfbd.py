@@ -70,8 +70,11 @@ class CfbdClient:
         ttl_hours: float | None,
         path: str,
         params: dict[str, Any] | None = None,
+        key_suffix: str = "",
     ) -> Any:
-        key = safe_key(path.strip("/"), *(f"{k}={v}" for k, v in sorted((params or {}).items())))
+        key = safe_key(
+            path.strip("/"), *(f"{k}={v}" for k, v in sorted((params or {}).items())), key_suffix
+        )
         hit = self.cache.get_json(season, namespace, key, ttl_hours)
         if hit is not None:
             log.debug("cfbd.cache_hit", namespace=namespace, key=key)
@@ -135,14 +138,22 @@ class CfbdClient:
         if prior_season:
             ttl = None
         params = {"year": year, "week": week, "seasonType": season_type}
-        return list(self._cached(year, "cfbd", ttl, "/plays", params))
+        return list(
+            self._cached(
+                year, "cfbd", ttl, "/plays", params, key_suffix="final" if completed else "live"
+            )
+        )
 
     def drives(
         self, year: int, week: int, season_type: str = "regular", completed: bool = True
     ) -> list[dict[str, Any]]:
         ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
         params = {"year": year, "week": week, "seasonType": season_type}
-        return list(self._cached(year, "cfbd", ttl, "/drives", params))
+        return list(
+            self._cached(
+                year, "cfbd", ttl, "/drives", params, key_suffix="final" if completed else "live"
+            )
+        )
 
     def lines_season(
         self, year: int, season_type: str = "regular", prior_season: bool = False
@@ -162,7 +173,16 @@ class CfbdClient:
         """Enriched pass attempts (passer, target, air yards, outcome) for one week."""
         ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
         params = {"year": year, "week": week, "seasonType": season_type}
-        return list(self._cached(year, "cfbd", ttl, "/passing/plays", params))
+        return list(
+            self._cached(
+                year,
+                "cfbd",
+                ttl,
+                "/passing/plays",
+                params,
+                key_suffix="final" if completed else "live",
+            )
+        )
 
     def rushing_plays(
         self, year: int, week: int, season_type: str = "regular", completed: bool = True
@@ -170,7 +190,16 @@ class CfbdClient:
         """Enriched rushes (rusher attribution, sacks, kneels) for one week."""
         ttl = self.ttl.plays_completed if completed else self.ttl.plays_current
         params = {"year": year, "week": week, "seasonType": season_type}
-        return list(self._cached(year, "cfbd", ttl, "/rushing/plays", params))
+        return list(
+            self._cached(
+                year,
+                "cfbd",
+                ttl,
+                "/rushing/plays",
+                params,
+                key_suffix="final" if completed else "live",
+            )
+        )
 
     def roster(self, year: int) -> list[dict[str, Any]]:
         """Every roster in every division (~9 MB); cached a week."""

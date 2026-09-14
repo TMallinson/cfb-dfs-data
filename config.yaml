@@ -86,3 +86,11 @@ sheet:
     config: "Config"
     log: "Log"
   protected_editor_emails: [tmallinson@proton.me]
+  # Tabs you maintain by hand. Never deleted by reset-sheet; the first list is also
+  # placed right after Main in the tab order.
+  after_main_tabs: ["PFF Ratings", "2026 PFF Targets"]
+  keep_tabs:
+    - "PFF Ratings"
+    - "2026 PFF Targets"
+    - "2026 PFF Team Grades Raw (ref)"
+    - "2026 PFF Receiving Raw (ref)"

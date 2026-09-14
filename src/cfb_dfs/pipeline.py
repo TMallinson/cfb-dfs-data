@@ -1369,7 +1369,10 @@ def _finish(
             r.warn(f"protecting raw tabs failed: {exc}")
     if not dry_run:
         try:
-            writer.order_tabs([specs[k].name for k in TAB_ORDER if k in specs])
+            order = [specs["main"].name, *s.sheet.after_main_tabs] + [
+                specs[k].name for k in TAB_ORDER[1:] if k in specs
+            ]
+            writer.order_tabs(order)
         except Exception as exc:
             r.warn(f"reordering tabs failed: {exc}")
     if not dry_run and any(t.spec.name == specs["main"].name for t in tables):
